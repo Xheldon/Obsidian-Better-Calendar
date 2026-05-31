@@ -2,6 +2,7 @@ import { App, PluginSettingTab, Setting, moment } from "obsidian";
 import type BetterCalendarPlugin from "./main";
 import { generateId, HighlightRule, WeekStart } from "./settings";
 import { validatePattern } from "./highlights";
+import { isDailyNotesEnabled } from "./dailyNotes";
 
 export class BetterCalendarSettingTab extends PluginSettingTab {
 	private plugin: BetterCalendarPlugin;
@@ -16,6 +17,7 @@ export class BetterCalendarSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		this.renderGeneral(containerEl);
+		this.renderDailyNotesInfo(containerEl);
 		this.renderAppearance(containerEl);
 		this.renderHighlights(containerEl);
 		this.renderAdvanced(containerEl);
@@ -139,16 +141,19 @@ export class BetterCalendarSettingTab extends PluginSettingTab {
 				.setButtonText("Add highlight")
 				.setCta()
 				.onClick(async () => {
-					this.plugin.settings.highlights.push({
+					const rule: HighlightRule = {
 						id: generateId(),
 						name: "",
 						pattern: "",
 						flags: "m",
 						color: "#3aa675",
 						enabled: true,
-					});
+					};
+					this.plugin.settings.highlights.push(rule);
 					await this.commit();
-					this.display();
+					// Append just the new row, so scroll position and the other
+					// rows' in-progress edits are preserved (no full re-render).
+					this.renderHighlightRule(list, rule);
 				}),
 		);
 	}
@@ -218,9 +223,30 @@ export class BetterCalendarSettingTab extends PluginSettingTab {
 				.onClick(async () => {
 					this.plugin.settings.highlights = this.plugin.settings.highlights.filter((r) => r.id !== rule.id);
 					await this.commit();
-					this.display();
+					setting.settingEl.remove(); // remove just this row — no full re-render
 				}),
 		);
+	}
+
+	// --- Daily notes (diagnostic) ---------------------------------------------
+
+	private renderDailyNotesInfo(containerEl: HTMLElement): void {
+		new Setting(containerEl).setName("Daily notes").setHeading();
+
+		if (!isDailyNotesEnabled(this.app)) {
+			containerEl.createEl("p", {
+				cls: "setting-item-description bc-warning",
+				text:
+					"The core 'Daily notes' plugin is disabled. Enable it in Settings → Core plugins so Better Calendar can detect and create your notes.",
+			});
+		}
+
+		const s = this.plugin.dailyNoteSettings();
+		const info = containerEl.createDiv({ cls: "setting-item-description bc-daily-info" });
+		info.createDiv({ text: "Better Calendar marks a day as having a note when a file exists at:" });
+		const folder = s.folder ? s.folder.replace(/\/$/, "") + "/" : "";
+		info.createEl("div", { cls: "bc-daily-path", text: `${folder}${s.format}.md` });
+		info.createDiv({ text: `Folder: ${s.folder || "(vault root)"}   ·   Format: ${s.format}   ·   Template: ${s.template || "(none)"}` });
 	}
 
 	// --- Advanced -------------------------------------------------------------

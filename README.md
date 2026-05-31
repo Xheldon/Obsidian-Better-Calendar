@@ -46,10 +46,10 @@ Daily notes). Better Calendar reads its *New file location*, *Date format*, and
 
 ## Usage
 
-- Open the calendar from the ribbon icon or the command **“Better Calendar:
-  Open calendar.”** It opens in the right sidebar by default and can be dragged
-  anywhere, including the main editor area where the extra width lets it show
-  several months at once.
+- Better Calendar appears as a tab in the right sidebar (the calendar icon in
+  the sidebar's tab strip); you can also open or focus it with the command
+  **“Better Calendar: Open calendar.”** Drag it anywhere, including the main
+  editor area, where the extra width lets it show several months at once.
 - Click a day to open/create its note. `Ctrl`/`Cmd`-click opens it in a new tab.
 - Hover a month to see its outline; the dots under each date show note presence
   and any matched highlight rules.

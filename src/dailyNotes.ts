@@ -43,24 +43,13 @@ export function dayKey(date: moment.Moment): string {
 }
 
 /**
- * Build a map of existing daily notes keyed by day, by parsing each markdown
- * file's basename with the configured date format. Files outside the daily
- * notes folder are ignored.
+ * The existing daily note for `date`, or null. Looks for a file at the canonical
+ * folder + date-format path — the exact location a note would be created at — so
+ * detection always agrees with creation.
  */
-export function getAllDailyNotes(app: App, settings: DailyNoteSettings): Map<string, TFile> {
-	const map = new Map<string, TFile>();
-	const folder = normalizePath(settings.folder || "/");
-	const prefix = folder === "/" ? "" : folder + "/";
-
-	for (const file of app.vault.getMarkdownFiles()) {
-		if (prefix && !file.path.startsWith(prefix)) continue;
-		const parsed = moment(file.basename, settings.format, true);
-		if (!parsed.isValid()) continue;
-		const key = dayKey(parsed);
-		// Prefer the first match for a given day (stable across reorders).
-		if (!map.has(key)) map.set(key, file);
-	}
-	return map;
+export function getDailyNote(app: App, date: moment.Moment, settings: DailyNoteSettings): TFile | null {
+	const file = app.vault.getAbstractFileByPath(dailyNotePath(date, settings));
+	return file instanceof TFile ? file : null;
 }
 
 /** The vault path a daily note for `date` would live at. */

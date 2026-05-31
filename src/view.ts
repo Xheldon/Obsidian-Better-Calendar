@@ -4,7 +4,7 @@ import type BetterCalendarPlugin from "./main";
 import { MAX_ACTIVITY_DOTS, VIEW_TYPE_CALENDAR } from "./constants";
 import { computeGeometry, placeFocus, visualColumn, GridPlacement } from "./layout";
 import { effectiveLocale, isWeekend, startOfWeek, weekdayLabels, weekStartDay } from "./dateUtils";
-import { createDailyNote, dailyNotePath, dayKey, getAllDailyNotes } from "./dailyNotes";
+import { createDailyNote, dailyNotePath, dayKey, getDailyNote, DailyNoteSettings } from "./dailyNotes";
 import { NoteMeta } from "./highlights";
 import { CreateNoteModal } from "./createNoteModal";
 
@@ -38,7 +38,8 @@ export class CalendarView extends ItemView {
 	/** When true, today is auto-pinned to the focus slot on every (re)layout. */
 	private pinnedToToday = true;
 
-	private dailyNotes = new Map<string, TFile>();
+	/** Daily-note config snapshot for the current render. */
+	private dailySettings: DailyNoteSettings | null = null;
 	private cellsByVisual = new Map<string, CellRef>();
 	private cellsByMonth = new Map<string, CellRef[]>();
 	private hoveredMonth: string | null = null;
@@ -79,9 +80,8 @@ export class CalendarView extends ItemView {
 		this.resizeObserver = null;
 	}
 
-	/** Rebuild the daily-note index from the vault, then re-render. */
+	/** Re-render (called on vault changes and settings saves). */
 	refreshData(): void {
-		this.dailyNotes = getAllDailyNotes(this.app, this.plugin.dailyNoteSettings());
 		this.render();
 	}
 
@@ -145,6 +145,7 @@ export class CalendarView extends ItemView {
 	private render(): void {
 		if (!this.bodyEl) return;
 		const settings = this.plugin.settings;
+		this.dailySettings = this.plugin.dailyNoteSettings();
 		const locale = effectiveLocale(settings.localeOverride);
 		const firstDay = weekStartDay(settings.weekStart, locale);
 
@@ -285,7 +286,7 @@ export class CalendarView extends ItemView {
 		top.createSpan({ cls: "bc-day-num", text: `${date.date()}` });
 
 		const dotsEl = el.createDiv({ cls: "bc-dots" });
-		const file = this.dailyNotes.get(key) ?? null;
+		const file = getDailyNote(this.app, date, this.dailySettings!);
 		if (file) {
 			el.addClass("has-note");
 			// Immediate presence dot; decorateDots() upgrades it with word count + rules.
@@ -353,9 +354,8 @@ export class CalendarView extends ItemView {
 	private async openOrCreate(date: moment.Moment, newLeaf: boolean): Promise<void> {
 		const dailySettings = this.plugin.dailyNoteSettings();
 		const locale = effectiveLocale(this.plugin.settings.localeOverride);
-		const key = dayKey(date);
 
-		let file = this.dailyNotes.get(key) ?? null;
+		let file = getDailyNote(this.app, date, dailySettings);
 		if (!file) {
 			const path = dailyNotePath(date, dailySettings);
 			if (this.plugin.settings.confirmBeforeCreate) {
@@ -364,7 +364,7 @@ export class CalendarView extends ItemView {
 			}
 			file = await createDailyNote(this.app, date, dailySettings);
 			if (!file) return;
-			this.dailyNotes.set(key, file); // optimistic; vault 'create' event will reconcile
+			// The vault 'create' event will refresh the calendar and show the dot.
 		}
 
 		const leaf = this.app.workspace.getLeaf(newLeaf ? "tab" : false);

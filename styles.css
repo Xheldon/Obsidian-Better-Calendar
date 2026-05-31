@@ -178,13 +178,17 @@
 	background-color: var(--bc-dot-color, var(--interactive-accent));
 }
 
-/* Hover: month-wide tint (perimeter outline is drawn inline as a box-shadow). */
+/* Month hover: faint tint + square corners so the inline box-shadow outline
+   draws as straight lines instead of following the cell's rounded corners. */
 .bc-day.is-month-hover {
 	background-color: var(--background-modifier-hover);
+	border-radius: 0;
 }
 
+/* Single-day hover: a stronger accent tint so the focused day stands out,
+   even within an outlined (month-hovered) area. */
 .bc-day:hover {
-	background-color: var(--background-modifier-hover);
+	background-color: color-mix(in srgb, var(--interactive-accent) 18%, transparent);
 }
 
 /* Today wins over the states above. */
@@ -231,4 +235,19 @@
 
 .bc-invalid {
 	border-color: var(--text-error) !important;
+}
+
+.bc-warning {
+	color: var(--text-error);
+}
+
+.bc-daily-info {
+	margin-top: 4px;
+	line-height: 1.7;
+}
+
+.bc-daily-path {
+	font-family: var(--font-monospace);
+	color: var(--text-normal);
+	margin: 2px 0;
 }

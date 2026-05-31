@@ -22,7 +22,6 @@ export default class BetterCalendarPlugin extends Plugin {
 
 		this.registerView(VIEW_TYPE_CALENDAR, (leaf) => new CalendarView(leaf, this));
 
-		this.addRibbonIcon("calendar-days", "Open Better Calendar", () => void this.activateView());
 		this.addCommand({
 			id: "open-better-calendar",
 			name: "Open calendar",
@@ -35,13 +34,16 @@ export default class BetterCalendarPlugin extends Plugin {
 		this.registerEvent(this.app.vault.on("delete", (f) => this.onVaultChange(f)));
 		this.registerEvent(this.app.vault.on("rename", (f) => this.onVaultChange(f)));
 		this.registerEvent(this.app.vault.on("modify", (f) => this.onVaultChange(f)));
+
+		// Surface the calendar as a sidebar tab on startup, without stealing focus.
+		this.app.workspace.onLayoutReady(() => void this.ensureLeaf());
 	}
 
 	onunload(): void {
 		// Leaves of our view type are detached automatically by Obsidian.
 	}
 
-	/** Reveal the calendar view, creating it in the right sidebar if needed. */
+	/** Reveal the calendar view (and focus it), creating it in the right sidebar if needed. */
 	async activateView(): Promise<void> {
 		const { workspace } = this.app;
 		let leaf: WorkspaceLeaf | null = workspace.getLeavesOfType(VIEW_TYPE_CALENDAR)[0] ?? null;
@@ -53,6 +55,14 @@ export default class BetterCalendarPlugin extends Plugin {
 		workspace.revealLeaf(leaf);
 	}
 
+	/** Add the calendar to the right sidebar tab strip if it isn't open already. */
+	private async ensureLeaf(): Promise<void> {
+		if (this.app.workspace.getLeavesOfType(VIEW_TYPE_CALENDAR).length) return;
+		const leaf = this.app.workspace.getRightLeaf(false);
+		if (!leaf) return;
+		await leaf.setViewState({ type: VIEW_TYPE_CALENDAR, active: false });
+	}
+
 	dailyNoteSettings(): DailyNoteSettings {
 		return getDailyNoteSettings(this.app);
 	}
@@ -62,7 +72,9 @@ export default class BetterCalendarPlugin extends Plugin {
 	}
 
 	async saveSettings(): Promise<void> {
-		this.settings = normalizeSettings(this.settings);
+		// Note: do NOT re-run normalizeSettings here. It rebuilds the highlight
+		// rule objects, which would detach the references held by the settings-tab
+		// inputs and drop in-progress edits. Normalization happens on load instead.
 		await this.saveData(this.settings);
 		this.applyHighlightSettings();
 		this.refreshViews();
