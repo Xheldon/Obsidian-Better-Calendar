@@ -240,13 +240,49 @@
 
 /* --- Settings -------------------------------------------------------------- */
 
-.bc-highlight-rule .bc-pattern-input {
-	font-family: var(--font-monospace);
-	min-width: 160px;
+/* These rows carry no name/desc, so drop the empty info area and fill the row. */
+.bc-highlight-rule .setting-item-info {
+	display: none;
 }
 
-.bc-highlight-rule .bc-flags-input {
-	width: 56px;
+.bc-highlight-rule .setting-item-control {
+	flex: 1;
+	justify-content: flex-start;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.bc-highlight-rule .bc-pattern-input {
+	flex: 1 1 160px;
+	font-family: var(--font-monospace);
+}
+
+.bc-flags {
+	display: flex;
+	gap: 4px;
+}
+
+.bc-flag-chip {
+	width: 28px;
+	padding: 5px 0;
+	font-family: var(--font-monospace);
+	font-weight: 600;
+	color: var(--text-muted);
+	background-color: var(--background-modifier-form-field);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	box-shadow: none;
+	cursor: pointer;
+}
+
+.bc-flag-chip:hover {
+	color: var(--text-normal);
+}
+
+.bc-flag-chip.is-on {
+	color: var(--text-on-accent);
+	background-color: var(--interactive-accent);
+	border-color: var(--interactive-accent);
 }
 
 .bc-invalid {

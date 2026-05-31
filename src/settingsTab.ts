@@ -223,16 +223,6 @@ export class BetterCalendarSettingTab extends PluginSettingTab {
 				}),
 		);
 
-		setting.addText((text) =>
-			text
-				.setPlaceholder("Name")
-				.setValue(rule.name)
-				.onChange(async (value) => {
-					rule.name = value;
-					await this.commit();
-				}),
-		);
-
 		setting.addText((text) => {
 			text
 				.setPlaceholder("Regex pattern")
@@ -249,17 +239,24 @@ export class BetterCalendarSettingTab extends PluginSettingTab {
 			text.inputEl.toggleClass("bc-invalid", Boolean(rule.pattern) && Boolean(error));
 		});
 
-		setting.addText((text) => {
-			text
-				.setPlaceholder("flags")
-				.setValue(rule.flags)
-				.onChange(async (value) => {
-					rule.flags = value.replace(/g/g, "");
-					await this.commit();
-				});
-			text.inputEl.addClass("bc-flags-input");
-			text.inputEl.title = "Regex flags, e.g. 'i' or 'm'";
-		});
+		// Regex flags as toggle chips (m / i / s); g is excluded as it does nothing for matching.
+		const flagInfo: Record<string, string> = {
+			m: "multiline — ^ and $ match the start/end of each line",
+			i: "ignore case",
+			s: "dotall — . also matches newlines",
+		};
+		const flagsEl = setting.controlEl.createDiv({ cls: "bc-flags" });
+		for (const flag of ["m", "i", "s"]) {
+			const chip = flagsEl.createEl("button", { cls: "bc-flag-chip", text: flag });
+			chip.setAttribute("aria-label", flagInfo[flag]);
+			chip.toggleClass("is-on", rule.flags.includes(flag));
+			chip.addEventListener("click", async () => {
+				const on = rule.flags.includes(flag);
+				rule.flags = (on ? rule.flags.replace(flag, "") : rule.flags + flag).replace(/g/g, "");
+				chip.toggleClass("is-on", !on);
+				await this.commit();
+			});
+		}
 
 		setting.addColorPicker((picker) =>
 			picker.setValue(rule.color).onChange(async (value) => {
