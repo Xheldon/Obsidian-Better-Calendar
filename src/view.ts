@@ -7,8 +7,8 @@ import { effectiveLocale, isWeekend, startOfWeek, weekdayLabels, weekStartDay } 
 import { createDailyNote, dailyNotePath, dayKey, getDailyNote, DailyNoteSettings } from "./dailyNotes";
 import { CreateNoteModal } from "./createNoteModal";
 
-/** Gap between adjacent month blocks, in px. */
-const BLOCK_GAP = 12;
+/** No gap between weeks — the grid reads as one continuous strip. */
+const BLOCK_GAP = 0;
 /** Width of the optional week-number column, in px. */
 const WEEKNUM_W = 26;
 /** Height of the weekday header row, in px. */
@@ -283,7 +283,6 @@ export class CalendarView extends ItemView {
 		el.dataset.key = key;
 		el.dataset.month = monthKey;
 		if (isWeekend(dow)) el.addClass("is-weekend");
-		if (date.month() % 2 === 1) el.addClass("is-alt-month");
 		if (date.isSame(today, "day")) el.addClass("is-today");
 
 		// New year: a translucent year watermark behind Jan 1.

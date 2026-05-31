@@ -126,10 +126,6 @@
 	overflow: hidden;
 }
 
-.bc-day.is-alt-month {
-	background-color: rgba(127, 127, 127, 0.06);
-}
-
 .bc-day.is-weekend .bc-day-num {
 	color: var(--text-muted);
 }

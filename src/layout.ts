@@ -63,20 +63,22 @@ export function computeGeometry(
 	return { columns, rows, cellW, cellH };
 }
 
-/** Weeks of past context shown before today (so today becomes the 3rd week). */
-const FOCUS_PAST_WEEKS = 2;
+/** Bands of past context shown above today (today starts the 3rd row). */
+const FOCUS_PAST_BANDS = 2;
 
 /**
  * Row-major flow: weeks fill each band left-to-right, then wrap to the next
- * band. Today's week sits after a little past context — so it lands on the 3rd
- * row in a one-week-wide pane, and near the top-left in wider panes.
+ * band. Today starts the 3rd row, with two rows of recent weeks above it; in a
+ * one-week-wide pane that is literally the 3rd row, and short panes clamp to
+ * the last available row.
  */
 export function placeFocus(geometry: GridGeometry): GridPlacement {
 	const totalWeeks = geometry.columns * geometry.rows;
+	const band = Math.min(FOCUS_PAST_BANDS, Math.max(0, geometry.rows - 1));
 	return {
 		...geometry,
 		totalWeeks,
-		focusLinear: Math.min(FOCUS_PAST_WEEKS, Math.max(0, totalWeeks - 1)),
+		focusLinear: Math.min(band * geometry.columns, Math.max(0, totalWeeks - 1)),
 	};
 }
 

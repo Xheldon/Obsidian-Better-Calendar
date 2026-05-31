@@ -25,10 +25,10 @@ size.
   - Each day cell stays within a **minimum / maximum size** you set, so space is
     filled with more calendar — not bigger boxes. Left-over space gently grows
     the cells up to the maximum.
-- **Smart "today" placement.** By default today's week is shown as the **3rd
-  week** (a couple of weeks of past context first) — which puts it on the 3rd
-  row in a narrow pane and near the top in wider ones. The ‹ › buttons move the
-  view by one month; **Today** snaps back.
+- **Smart "today" placement.** By default today's week starts the **3rd row**,
+  with two rows of recent weeks above it, so you land on today with its recent
+  history already in view. The ‹ › buttons move the view by one month; **Today**
+  snaps back.
 - **Month cues without clutter.** Instead of a header per month, the **1st of
   each month** shows the month's short name, and **hovering anywhere in a month**
   traces an outline around exactly that month's days.
