@@ -6,7 +6,7 @@
 node_modules
 
 # build
-# main.js is committed so the plugin is drop-in installable without a build step.
+main.js
 *.js.map
 
 # obsidian
