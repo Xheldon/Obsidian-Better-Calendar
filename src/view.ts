@@ -168,7 +168,7 @@ export class CalendarView extends ItemView {
 
 		if (this.pinnedToToday) {
 			const todayWeek = this.weekStartOf(moment().startOf("day"));
-			this.firstVisibleWeekStart = todayWeek.clone().subtract(placement.targetLinear, "weeks");
+			this.firstVisibleWeekStart = todayWeek.clone().subtract(placement.focusLinear, "weeks");
 		} else {
 			this.firstVisibleWeekStart = this.weekStartOf(this.firstVisibleWeekStart);
 		}
@@ -240,7 +240,8 @@ export class CalendarView extends ItemView {
 		const today = moment().startOf("day");
 		for (let b = 0; b < p.columns; b++) {
 			for (let r = 0; r < p.rows; r++) {
-				const weekIndex = b * p.rows + r;
+				// Row-major: each band holds `columns` consecutive weeks, left to right.
+				const weekIndex = r * p.columns + b;
 				const weekStart = this.firstVisibleWeekStart.clone().add(weekIndex, "weeks");
 
 				if (showWeekNumber) {
@@ -343,7 +344,7 @@ export class CalendarView extends ItemView {
 
 	private updateTitle(p: GridPlacement, locale: string): void {
 		// Representative day of the focus week (mid-week to avoid edge ambiguity).
-		const focus = this.firstVisibleWeekStart.clone().add(p.targetLinear, "weeks").add(3, "days");
+		const focus = this.firstVisibleWeekStart.clone().add(p.focusLinear, "weeks").add(3, "days");
 		this.titleMonthEl.setText(focus.clone().locale(locale).format("MMM"));
 		this.titleYearEl.setText(focus.format("YYYY"));
 	}

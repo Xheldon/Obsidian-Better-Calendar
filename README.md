@@ -18,17 +18,17 @@ size.
   you're asked whether to create one — the new note is placed in your daily-notes
   folder and filled in from your template (`{{title}}`, `{{date}}`,
   `{{date:FORMAT}}`, `{{time}}`, …). The confirmation can be turned off.
-- **Space-filling multi-month layout.** Days render **by week** (one row per
-  week). Those week-rows are packed into side-by-side month *blocks*:
-  - A **wider** pane fits more month blocks side by side.
-  - A **taller** pane fits more week-rows per block.
+- **Space-filling layout.** Days render **by week**, and weeks flow
+  **left-to-right, wrapping** to the next line when the row is full:
+  - A **wider** pane fits more weeks per row.
+  - A **taller** pane fits more rows of weeks.
   - Each day cell stays within a **minimum / maximum size** you set, so space is
     filled with more calendar — not bigger boxes. Left-over space gently grows
-    the cells up to the maximum, then centers them.
-- **Smart "today" placement.** By default today's week sits on the **3rd row**
-  and in the **middle block-column** (middle-left when there's an even number of
-  columns — e.g. 4 columns → column 2, 5 columns → column 3). The ‹ › buttons
-  move the whole view by one month; **Today** snaps back.
+    the cells up to the maximum.
+- **Smart "today" placement.** By default today's week is shown as the **3rd
+  week** (a couple of weeks of past context first) — which puts it on the 3rd
+  row in a narrow pane and near the top in wider ones. The ‹ › buttons move the
+  view by one month; **Today** snaps back.
 - **Month cues without clutter.** Instead of a header per month, the **1st of
   each month** shows the month's short name, and **hovering anywhere in a month**
   traces an outline around exactly that month's days.
