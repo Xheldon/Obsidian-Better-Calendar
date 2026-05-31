@@ -99,25 +99,25 @@ export class CalendarView extends ItemView {
 		const controls = nav.createDiv({ cls: "bc-controls" });
 		const prev = controls.createEl("button", { cls: "bc-nav-btn", attr: { "aria-label": "Previous month" } });
 		setIcon(prev, "chevron-left");
-		prev.addEventListener("click", () => this.shiftMonths(-1));
+		this.registerDomEvent(prev, "click", () => this.shiftMonths(-1));
 
 		const today = controls.createEl("button", {
 			cls: "bc-nav-btn bc-today-btn",
 			text: "Today",
 			attr: { "aria-label": "Go to today" },
 		});
-		today.addEventListener("click", () => this.goToToday());
+		this.registerDomEvent(today, "click", () => this.goToToday());
 
 		const next = controls.createEl("button", { cls: "bc-nav-btn", attr: { "aria-label": "Next month" } });
 		setIcon(next, "chevron-right");
-		next.addEventListener("click", () => this.shiftMonths(1));
+		this.registerDomEvent(next, "click", () => this.shiftMonths(1));
 
 		this.bodyEl = root.createDiv({ cls: "bc-body" });
 		this.gridEl = this.bodyEl.createDiv({ cls: "bc-grid" });
 
-		this.gridEl.addEventListener("click", (e) => this.onGridClick(e));
-		this.gridEl.addEventListener("mouseover", (e) => this.onGridHover(e));
-		this.gridEl.addEventListener("mouseleave", () => this.setHoveredMonth(null));
+		this.registerDomEvent(this.gridEl, "click", (e) => this.onGridClick(e));
+		this.registerDomEvent(this.gridEl, "mouseover", (e) => this.onGridHover(e));
+		this.registerDomEvent(this.gridEl, "mouseleave", () => this.setHoveredMonth(null));
 	}
 
 	// --- navigation -----------------------------------------------------------
