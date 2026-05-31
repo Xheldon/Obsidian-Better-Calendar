@@ -279,6 +279,11 @@ export class CalendarView extends ItemView {
 		if (date.month() % 2 === 1) el.addClass("is-alt-month");
 		if (date.isSame(today, "day")) el.addClass("is-today");
 
+		// New year: a translucent year watermark behind Jan 1.
+		if (date.month() === 0 && date.date() === 1) {
+			el.createSpan({ cls: "bc-year-badge", text: date.format("YYYY") });
+		}
+
 		const top = el.createDiv({ cls: "bc-day-top" });
 		if (date.date() === 1) {
 			top.createSpan({ cls: "bc-month-badge", text: date.clone().locale(locale).format("MMM") });
