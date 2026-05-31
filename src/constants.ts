@@ -6,7 +6,7 @@ export const ABS_MAX_CELL = 200;
 
 /** Hard caps so a huge pane never tries to render an absurd number of cells. */
 export const MAX_BLOCK_COLUMNS = 6;
-export const MAX_BLOCK_ROWS = 10;
+export const MAX_BLOCK_ROWS = 40;
 
 /** How many activity dots a single daily note can show at most. */
 export const MAX_ACTIVITY_DOTS = 3;

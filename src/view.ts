@@ -208,13 +208,14 @@ export class CalendarView extends ItemView {
 			const days: number[] = [];
 			for (let d = 0; d < 7; d++) {
 				days.push(colIndex++);
-				tracks.push(`${p.cell}px`);
+				tracks.push(`${p.cellW}px`);
 			}
 			blockDayCols[b] = days;
 		}
 		grid.style.gridTemplateColumns = tracks.join(" ");
-		grid.style.gridTemplateRows = `${WEEKDAY_ROW_H}px repeat(${p.rows}, ${p.cell}px)`;
-		grid.style.setProperty("--bc-cell", `${p.cell}px`);
+		grid.style.gridTemplateRows = `${WEEKDAY_ROW_H}px repeat(${p.rows}, ${p.cellH}px)`;
+		// Scale fonts/dots off the smaller edge so nothing overflows a cell.
+		grid.style.setProperty("--bc-cell", `${Math.min(p.cellW, p.cellH)}px`);
 
 		const labels = weekdayLabels(firstDay, locale);
 		for (let b = 0; b < p.columns; b++) {

@@ -5,10 +5,12 @@ const DAYS_PER_WEEK = 7;
 export interface GridGeometry {
 	/** Side-by-side month blocks (the "columns" the user reasons about). */
 	columns: number;
-	/** Week-rows per block. */
+	/** Week-rows per block; chosen to fill the available height. */
 	rows: number;
-	/** Square day-cell edge, in px. */
-	cell: number;
+	/** Day-cell width, in px (fills each column's share of the width). */
+	cellW: number;
+	/** Day-cell height, in px (fills the available height). */
+	cellH: number;
 }
 
 export interface GridPlacement extends GridGeometry {
@@ -27,13 +29,17 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 /**
- * Decide how many month blocks (columns) and week-rows fit, and how big each
- * square day-cell should be, given the available area and the cell-size range.
+ * Decide how many month blocks (columns) and week-rows (rows) to render and how
+ * big each day-cell is, so the grid fills the available area while keeping the
+ * cell edges within [minCell, maxCell].
  *
- * Strategy: pack as many whole blocks/rows as fit at the *minimum* cell size
- * (so extra space becomes more months, not bigger cells), then grow the cell
- * uniformly to consume leftover space up to the maximum. The remainder is
- * centered by the caller.
+ * - Columns: as many whole blocks as fit at the minimum cell width — a wider
+ *   pane shows more months side by side.
+ * - Cell width: fills each column's share of the width (capped at maxCell).
+ * - Rows: enough near-square rows to fill the height — a taller pane shows more
+ *   weeks per column instead of leaving blank space below.
+ * - Cell height: sized to fill the height across those rows (within the range),
+ *   so cells may end up very slightly non-square rather than leaving a gap.
  */
 export function computeGeometry(
 	width: number,
@@ -47,23 +53,18 @@ export function computeGeometry(
 	const usableWidth = Math.max(width, blockWidthAtMin);
 	const usableHeight = Math.max(availableHeight, safeMin);
 
-	const columns = clamp(
-		Math.floor(usableWidth / blockWidthAtMin),
-		1,
-		MAX_BLOCK_COLUMNS,
-	);
-	const rows = clamp(
-		Math.floor(usableHeight / safeMin),
-		1,
-		MAX_BLOCK_ROWS,
+	const columns = clamp(Math.floor(usableWidth / blockWidthAtMin), 1, MAX_BLOCK_COLUMNS);
+	const cellW = clamp(
+		Math.floor((usableWidth - columns * weekColumnPx) / (columns * DAYS_PER_WEEK)),
+		minCell,
+		maxCell,
 	);
 
-	// Largest square cell that lets `columns` blocks and `rows` rows still fit.
-	const cellByWidth = (usableWidth - columns * weekColumnPx) / (columns * DAYS_PER_WEEK);
-	const cellByHeight = usableHeight / rows;
-	const cell = clamp(Math.floor(Math.min(cellByWidth, cellByHeight)), minCell, maxCell);
+	// Pick a row count that keeps cells about square, then size them to fill the height.
+	const rows = clamp(Math.max(1, Math.round(usableHeight / cellW)), 1, MAX_BLOCK_ROWS);
+	const cellH = clamp(Math.floor(usableHeight / rows), minCell, maxCell);
 
-	return { columns, rows, cell };
+	return { columns, rows, cellW, cellH };
 }
 
 /**
