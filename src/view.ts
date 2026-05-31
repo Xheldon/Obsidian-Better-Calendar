@@ -323,7 +323,6 @@ export class CalendarView extends ItemView {
 			if (!rule) continue;
 			const dot = dotsEl.createDiv({ cls: "bc-dot bc-dot-rule" });
 			dot.style.setProperty("--bc-dot-color", rule.color);
-			dot.setAttribute("aria-label", rule.name || rule.pattern);
 		}
 	}
 
