@@ -28,6 +28,10 @@ export interface BetterCalendarSettings {
 	/** Square day-cell edge is clamped to [minCellSize, maxCellSize] px. */
 	minCellSize: number;
 	maxCellSize: number;
+	/** Month-hover outline color; "" follows the theme accent. */
+	outlineColor: string;
+	/** Single-day hover highlight color; "" follows the theme accent. */
+	hoverColor: string;
 	highlights: HighlightRule[];
 }
 
@@ -38,6 +42,8 @@ export const DEFAULT_SETTINGS: BetterCalendarSettings = {
 	localeOverride: "system",
 	minCellSize: 34,
 	maxCellSize: 72,
+	outlineColor: "",
+	hoverColor: "",
 	highlights: [],
 };
 

@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, moment } from "obsidian";
+import { App, ColorComponent, PluginSettingTab, Setting, moment } from "obsidian";
 import type BetterCalendarPlugin from "./main";
 import { generateId, HighlightRule, WeekStart } from "./settings";
 import { validatePattern } from "./highlights";
@@ -104,6 +104,73 @@ export class BetterCalendarSettingTab extends PluginSettingTab {
 					}
 				}),
 			);
+
+		this.addColorSetting(
+			containerEl,
+			"Month outline color",
+			"Outline drawn around a month on hover. Defaults to your theme's accent — turn the toggle off to pick a custom color.",
+			() => this.plugin.settings.outlineColor,
+			(v) => {
+				this.plugin.settings.outlineColor = v;
+			},
+		);
+		this.addColorSetting(
+			containerEl,
+			"Day hover color",
+			"Highlight when hovering a single day. Defaults to your theme's accent — turn the toggle off to pick a custom color.",
+			() => this.plugin.settings.hoverColor,
+			(v) => {
+				this.plugin.settings.hoverColor = v;
+			},
+		);
+	}
+
+	/** A "use theme accent (toggle) + custom color (picker)" row; "" stored = follow theme. */
+	private addColorSetting(
+		containerEl: HTMLElement,
+		name: string,
+		desc: string,
+		get: () => string,
+		set: (value: string) => void,
+	): void {
+		const themeHex = this.themeAccentHex();
+		let picker: ColorComponent;
+		new Setting(containerEl)
+			.setName(name)
+			.setDesc(desc)
+			.addToggle((t) =>
+				t
+					.setTooltip("Use theme accent color")
+					.setValue(get() === "")
+					.onChange(async (useTheme) => {
+						set(useTheme ? "" : get() || themeHex);
+						await this.commit();
+						picker.setDisabled(useTheme);
+						picker.setValue(get() || themeHex);
+					}),
+			)
+			.addColorPicker((cp) => {
+				picker = cp;
+				cp
+					.setValue(get() || themeHex)
+					.setDisabled(get() === "")
+					.onChange(async (value) => {
+						set(value);
+						await this.commit();
+					});
+			});
+	}
+
+	/** Reads the theme accent color as a #rrggbb hex via a hidden probe element. */
+	private themeAccentHex(): string {
+		const probe = this.containerEl.createDiv();
+		probe.style.color = "var(--interactive-accent)";
+		probe.style.display = "none";
+		const rgb = getComputedStyle(probe).color;
+		probe.remove();
+		const parts = rgb.match(/\d+/g);
+		if (!parts || parts.length < 3) return "#3aa675";
+		return "#" + parts.slice(0, 3).map((n) => Number(n).toString(16).padStart(2, "0")).join("");
 	}
 
 	// --- Highlights -----------------------------------------------------------

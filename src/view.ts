@@ -217,6 +217,13 @@ export class CalendarView extends ItemView {
 		// Scale fonts/dots off the smaller edge so nothing overflows a cell.
 		grid.style.setProperty("--bc-cell", `${Math.min(p.cellW, p.cellH)}px`);
 
+		// Custom colors override the theme accent; empty inherits it via CSS var fallback.
+		const { outlineColor, hoverColor } = this.plugin.settings;
+		if (outlineColor) grid.style.setProperty("--bc-outline-color", outlineColor);
+		else grid.style.removeProperty("--bc-outline-color");
+		if (hoverColor) grid.style.setProperty("--bc-hover-color", hoverColor);
+		else grid.style.removeProperty("--bc-hover-color");
+
 		const labels = weekdayLabels(firstDay, locale);
 		for (let b = 0; b < p.columns; b++) {
 			for (let d = 0; d < 7; d++) {
@@ -402,7 +409,7 @@ export class CalendarView extends ItemView {
 	 */
 	private edgeShadow(ref: CellRef, monthKey: string): string {
 		const w = 2;
-		const color = "var(--interactive-accent)";
+		const color = "var(--bc-outline-color, var(--interactive-accent))";
 		const isEdge = (dr: number, dc: number): boolean => {
 			const n = this.cellsByVisual.get(`${ref.vrow + dr}:${ref.vcol + dc}`);
 			return !n || n.monthKey !== monthKey;

@@ -13,9 +13,7 @@ size.
 ## Features
 
 - **Daily-note dots.** Reads your core **Daily notes** settings (folder, date
-  format, template) and shows a dot on every day that already has a note. The
-  number of dots scales with the note's word count (configurable via *Words per
-  dot*).
+  format, template) and shows a gray dot on every day that already has a note.
 - **Click to open or create.** Click a day to open its note. If none exists yet,
   you're asked whether to create one — the new note is placed in your daily-notes
   folder and filled in from your template (`{{title}}`, `{{date}}`,
@@ -58,11 +56,11 @@ Daily notes). Better Calendar reads its *New file location*, *Date format*, and
 
 | Setting | What it does |
 | --- | --- |
-| **Words per dot** | Words represented by one activity dot. |
 | **Start week on** | First day of the week, or follow the locale default. |
 | **Confirm before creating new note** | Ask before creating a missing daily note. |
 | **Show week number** | Add a week-number column to each month block. |
 | **Minimum / Maximum day size** | Clamp the day-cell edge (px). Drives how many months fit. |
+| **Month outline / Day hover color** | Hover colors; default to the theme accent, or pick a custom color. |
 | **Override locale** | Use a different locale for weekday / month names. |
 | **Highlights** | Name + regex (+ flags) + color rules; matching days get a colored dot. |
 
