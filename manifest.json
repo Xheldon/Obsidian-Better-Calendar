@@ -1,0 +1,10 @@
+{
+  "id": "better-calendar",
+  "name": "Better Calendar",
+  "version": "1.0.0",
+  "minAppVersion": "1.4.0",
+  "description": "A space-efficient, multi-month calendar that shows your daily notes, creates them from your template, and highlights days matching custom rules.",
+  "author": "Xheldon",
+  "authorUrl": "https://github.com/xheldon",
+  "isDesktopOnly": false
+}

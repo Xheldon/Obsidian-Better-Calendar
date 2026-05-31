@@ -1,0 +1,244 @@
+import { App, PluginSettingTab, Setting, moment } from "obsidian";
+import type BetterCalendarPlugin from "./main";
+import { generateId, HighlightRule, WeekStart } from "./settings";
+import { validatePattern } from "./highlights";
+
+export class BetterCalendarSettingTab extends PluginSettingTab {
+	private plugin: BetterCalendarPlugin;
+
+	constructor(app: App, plugin: BetterCalendarPlugin) {
+		super(app, plugin);
+		this.plugin = plugin;
+	}
+
+	display(): void {
+		const { containerEl } = this;
+		containerEl.empty();
+
+		this.renderGeneral(containerEl);
+		this.renderAppearance(containerEl);
+		this.renderHighlights(containerEl);
+		this.renderAdvanced(containerEl);
+	}
+
+	private async commit(): Promise<void> {
+		await this.plugin.saveSettings();
+	}
+
+	// --- General --------------------------------------------------------------
+
+	private renderGeneral(containerEl: HTMLElement): void {
+		new Setting(containerEl).setName("General").setHeading();
+
+		new Setting(containerEl)
+			.setName("Words per dot")
+			.setDesc("How many words should be represented by a single dot?")
+			.addText((text) =>
+				text
+					.setValue(String(this.plugin.settings.wordsPerDot))
+					.onChange(async (value) => {
+						const n = Number(value);
+						if (Number.isFinite(n) && n > 0) {
+							this.plugin.settings.wordsPerDot = Math.round(n);
+							await this.commit();
+						}
+					}),
+			);
+
+		const locale = moment.locale();
+		const localeFirstDay = moment().localeData().weekdays()[moment().localeData().firstDayOfWeek()];
+		new Setting(containerEl)
+			.setName("Start week on")
+			.setDesc("Which day to start the week on. 'Locale default' follows your moment.js locale.")
+			.addDropdown((dd) => {
+				dd.addOption("locale", `Locale default (${localeFirstDay})`);
+				const names = moment().locale(locale).localeData().weekdays();
+				for (let i = 0; i < 7; i++) dd.addOption(String(i), names[i]);
+				dd.setValue(String(this.plugin.settings.weekStart));
+				dd.onChange(async (value) => {
+					this.plugin.settings.weekStart = (value === "locale" ? "locale" : Number(value)) as WeekStart;
+					await this.commit();
+				});
+			});
+
+		new Setting(containerEl)
+			.setName("Confirm before creating new note")
+			.setDesc("Show a confirmation dialog before creating a new daily note.")
+			.addToggle((t) =>
+				t.setValue(this.plugin.settings.confirmBeforeCreate).onChange(async (value) => {
+					this.plugin.settings.confirmBeforeCreate = value;
+					await this.commit();
+				}),
+			);
+
+		new Setting(containerEl)
+			.setName("Show week number")
+			.setDesc("Add a leading column with the week number to each month block.")
+			.addToggle((t) =>
+				t.setValue(this.plugin.settings.showWeekNumber).onChange(async (value) => {
+					this.plugin.settings.showWeekNumber = value;
+					await this.commit();
+				}),
+			);
+	}
+
+	// --- Appearance -----------------------------------------------------------
+
+	private renderAppearance(containerEl: HTMLElement): void {
+		new Setting(containerEl).setName("Appearance").setHeading();
+		containerEl.createEl("p", {
+			cls: "setting-item-description",
+			text:
+				"Day cells stay within this size range. A wider pane fits more months side-by-side and a taller pane adds more rows, instead of stretching the cells.",
+		});
+
+		new Setting(containerEl)
+			.setName("Minimum day size")
+			.setDesc("Smallest day-cell edge, in pixels.")
+			.addText((text) =>
+				text.setValue(String(this.plugin.settings.minCellSize)).onChange(async (value) => {
+					const n = Number(value);
+					if (Number.isFinite(n) && n > 0) {
+						this.plugin.settings.minCellSize = Math.round(n);
+						await this.commit();
+					}
+				}),
+			);
+
+		new Setting(containerEl)
+			.setName("Maximum day size")
+			.setDesc("Largest day-cell edge, in pixels.")
+			.addText((text) =>
+				text.setValue(String(this.plugin.settings.maxCellSize)).onChange(async (value) => {
+					const n = Number(value);
+					if (Number.isFinite(n) && n > 0) {
+						this.plugin.settings.maxCellSize = Math.round(n);
+						await this.commit();
+					}
+				}),
+			);
+	}
+
+	// --- Highlights -----------------------------------------------------------
+
+	private renderHighlights(containerEl: HTMLElement): void {
+		new Setting(containerEl).setName("Highlights").setHeading();
+		containerEl.createEl("p", {
+			cls: "setting-item-description",
+			text:
+				"Add a colored dot to any day whose daily note matches a regular expression — for example '^## 今日运动' to mark the days you exercised.",
+		});
+
+		const list = containerEl.createDiv({ cls: "bc-highlight-list" });
+		for (const rule of this.plugin.settings.highlights) {
+			this.renderHighlightRule(list, rule);
+		}
+
+		new Setting(containerEl).addButton((b) =>
+			b
+				.setButtonText("Add highlight")
+				.setCta()
+				.onClick(async () => {
+					this.plugin.settings.highlights.push({
+						id: generateId(),
+						name: "",
+						pattern: "",
+						flags: "m",
+						color: "#3aa675",
+						enabled: true,
+					});
+					await this.commit();
+					this.display();
+				}),
+		);
+	}
+
+	private renderHighlightRule(container: HTMLElement, rule: HighlightRule): void {
+		const setting = new Setting(container).setClass("bc-highlight-rule");
+
+		setting.addToggle((t) =>
+			t
+				.setTooltip("Enable this highlight")
+				.setValue(rule.enabled)
+				.onChange(async (value) => {
+					rule.enabled = value;
+					await this.commit();
+				}),
+		);
+
+		setting.addText((text) =>
+			text
+				.setPlaceholder("Name")
+				.setValue(rule.name)
+				.onChange(async (value) => {
+					rule.name = value;
+					await this.commit();
+				}),
+		);
+
+		setting.addText((text) => {
+			text
+				.setPlaceholder("Regex pattern")
+				.setValue(rule.pattern)
+				.onChange(async (value) => {
+					rule.pattern = value;
+					const error = validatePattern(value, rule.flags);
+					text.inputEl.toggleClass("bc-invalid", Boolean(value) && Boolean(error));
+					text.inputEl.title = error ?? "";
+					await this.commit();
+				});
+			text.inputEl.addClass("bc-pattern-input");
+			const error = validatePattern(rule.pattern, rule.flags);
+			text.inputEl.toggleClass("bc-invalid", Boolean(rule.pattern) && Boolean(error));
+		});
+
+		setting.addText((text) => {
+			text
+				.setPlaceholder("flags")
+				.setValue(rule.flags)
+				.onChange(async (value) => {
+					rule.flags = value.replace(/g/g, "");
+					await this.commit();
+				});
+			text.inputEl.addClass("bc-flags-input");
+			text.inputEl.title = "Regex flags, e.g. 'i' or 'm'";
+		});
+
+		setting.addColorPicker((picker) =>
+			picker.setValue(rule.color).onChange(async (value) => {
+				rule.color = value;
+				await this.commit();
+			}),
+		);
+
+		setting.addExtraButton((b) =>
+			b
+				.setIcon("trash-2")
+				.setTooltip("Delete highlight")
+				.onClick(async () => {
+					this.plugin.settings.highlights = this.plugin.settings.highlights.filter((r) => r.id !== rule.id);
+					await this.commit();
+					this.display();
+				}),
+		);
+	}
+
+	// --- Advanced -------------------------------------------------------------
+
+	private renderAdvanced(containerEl: HTMLElement): void {
+		new Setting(containerEl).setName("Advanced").setHeading();
+
+		new Setting(containerEl)
+			.setName("Override locale")
+			.setDesc("Use a locale different from Obsidian's for weekday and month names.")
+			.addDropdown((dd) => {
+				dd.addOption("system", `Same as Obsidian (${moment.locale()})`);
+				for (const loc of moment.locales()) dd.addOption(loc, loc);
+				dd.setValue(this.plugin.settings.localeOverride);
+				dd.onChange(async (value) => {
+					this.plugin.settings.localeOverride = value;
+					await this.commit();
+				});
+			});
+	}
+}

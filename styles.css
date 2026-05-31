@@ -1,0 +1,234 @@
+/* ===== Better Calendar ===================================================== */
+
+.better-calendar {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	padding: 10px 12px;
+	overflow: hidden;
+}
+
+/* --- Header / navigation --------------------------------------------------- */
+
+.bc-nav {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	margin-bottom: 10px;
+}
+
+.bc-title {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+	min-width: 0;
+}
+
+.bc-title-month {
+	font-size: 1.5em;
+	font-weight: 800;
+	color: var(--text-normal);
+	white-space: nowrap;
+}
+
+.bc-title-year {
+	font-size: 1.5em;
+	font-weight: 700;
+	color: var(--text-accent);
+}
+
+.bc-controls {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	gap: 2px;
+}
+
+.bc-nav-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 4px 6px;
+	background: transparent;
+	border: none;
+	box-shadow: none;
+	border-radius: var(--radius-s);
+	color: var(--text-muted);
+	cursor: pointer;
+}
+
+.bc-nav-btn:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.bc-today-btn {
+	font-size: 0.82em;
+	padding: 4px 10px;
+}
+
+/* --- Grid body ------------------------------------------------------------- */
+
+.bc-body {
+	flex: 1 1 auto;
+	min-height: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+}
+
+.bc-grid {
+	display: grid;
+	justify-content: center;
+}
+
+.bc-weekday {
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	padding-bottom: 4px;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--text-muted);
+}
+
+.bc-weekday.is-weekend {
+	color: var(--text-faint);
+}
+
+.bc-weeknum {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: clamp(9px, calc(var(--bc-cell) * 0.24), 12px);
+	color: var(--text-faint);
+}
+
+/* --- Day cell -------------------------------------------------------------- */
+
+.bc-day {
+	position: relative;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 2px;
+	padding: 3px 2px;
+	border-radius: var(--radius-s);
+	font-size: clamp(11px, calc(var(--bc-cell) * 0.32), 18px);
+	line-height: 1.1;
+	color: var(--text-normal);
+	cursor: pointer;
+	overflow: hidden;
+}
+
+.bc-day.is-alt-month {
+	background-color: rgba(127, 127, 127, 0.06);
+}
+
+.bc-day.is-weekend .bc-day-num {
+	color: var(--text-muted);
+}
+
+.bc-day-top {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	margin-top: 1px;
+}
+
+.bc-day-num {
+	font-weight: 600;
+}
+
+.bc-month-badge {
+	position: absolute;
+	top: 2px;
+	left: 4px;
+	font-size: clamp(9px, calc(var(--bc-cell) * 0.22), 13px);
+	font-weight: 700;
+	color: var(--text-accent);
+}
+
+.bc-dots {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 3px;
+	max-width: 100%;
+}
+
+.bc-dot {
+	width: clamp(4px, calc(var(--bc-cell) * 0.1), 7px);
+	height: clamp(4px, calc(var(--bc-cell) * 0.1), 7px);
+	border-radius: 50%;
+}
+
+.bc-dot-activity {
+	background-color: var(--text-muted);
+}
+
+.bc-dot-rule {
+	background-color: var(--bc-dot-color, var(--interactive-accent));
+}
+
+/* Hover: month-wide tint (perimeter outline is drawn inline as a box-shadow). */
+.bc-day.is-month-hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.bc-day:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+/* Today wins over the states above. */
+.bc-day.is-today {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.bc-day.is-today .bc-day-num,
+.bc-day.is-today .bc-month-badge {
+	color: var(--text-on-accent);
+}
+
+.bc-day.is-today .bc-dot-activity {
+	background-color: var(--text-on-accent);
+}
+
+.bc-day.is-today:hover {
+	background-color: var(--interactive-accent-hover);
+}
+
+/* --- Create-note modal ----------------------------------------------------- */
+
+.better-calendar-modal-path {
+	font-family: var(--font-monospace);
+	font-size: 0.85em;
+	color: var(--text-muted);
+	background-color: var(--background-secondary);
+	padding: 6px 8px;
+	border-radius: var(--radius-s);
+	word-break: break-all;
+}
+
+/* --- Settings -------------------------------------------------------------- */
+
+.bc-highlight-rule .bc-pattern-input {
+	font-family: var(--font-monospace);
+	min-width: 160px;
+}
+
+.bc-highlight-rule .bc-flags-input {
+	width: 56px;
+}
+
+.bc-invalid {
+	border-color: var(--text-error) !important;
+}

@@ -1,0 +1,27 @@
+{
+  "name": "better-calendar",
+  "version": "1.0.0",
+  "description": "A space-efficient, multi-month calendar for your daily notes.",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+    "typecheck": "tsc -noEmit -skipLibCheck"
+  },
+  "keywords": [
+    "obsidian",
+    "obsidian-plugin",
+    "calendar",
+    "daily-notes"
+  ],
+  "author": "Xheldon",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "builtin-modules": "^3.3.0",
+    "esbuild": "^0.20.2",
+    "obsidian": "^1.5.7-1",
+    "tslib": "^2.6.2",
+    "typescript": "^5.4.5"
+  }
+}
