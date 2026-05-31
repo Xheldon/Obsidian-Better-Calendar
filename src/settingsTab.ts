@@ -195,7 +195,6 @@ export class BetterCalendarSettingTab extends PluginSettingTab {
 				.onClick(async () => {
 					const rule: HighlightRule = {
 						id: generateId(),
-						name: "",
 						pattern: "",
 						flags: "m",
 						color: "#3aa675",

@@ -3,7 +3,7 @@
   "name": "Better Calendar",
   "version": "1.0.0",
   "minAppVersion": "1.4.0",
-  "description": "A space-efficient, multi-month calendar that shows your daily notes, creates them from your template, and highlights days matching custom rules.",
+  "description": "A compact, space-filling calendar for your daily notes — open or create them from your template, and mark days that match your own highlight rules.",
   "author": "Xheldon",
   "authorUrl": "https://github.com/xheldon",
   "isDesktopOnly": false

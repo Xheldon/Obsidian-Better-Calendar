@@ -5,8 +5,6 @@ export type WeekStart = "locale" | 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export interface HighlightRule {
 	id: string;
-	/** Human label shown in settings and as the dot's tooltip. */
-	name: string;
 	/** Source of a RegExp tested against each daily note's content. */
 	pattern: string;
 	/** RegExp flags, e.g. "m" or "i". "g" is stripped to keep `test` stateless. */
@@ -70,7 +68,6 @@ export function normalizeSettings(
 function normalizeRule(rule: Partial<HighlightRule>): HighlightRule {
 	return {
 		id: rule.id ?? generateId(),
-		name: rule.name ?? "",
 		pattern: rule.pattern ?? "",
 		flags: (rule.flags ?? "").replace(/g/g, ""),
 		color: rule.color || "#3aa675",

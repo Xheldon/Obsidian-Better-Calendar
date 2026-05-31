@@ -3,7 +3,6 @@ import { HighlightRule } from "./settings";
 
 export interface CompiledRule {
 	id: string;
-	name: string;
 	color: string;
 	regex: RegExp;
 }
@@ -17,7 +16,6 @@ export function compileRules(rules: HighlightRule[]): CompiledRule[] {
 		if (error) continue;
 		compiled.push({
 			id: rule.id,
-			name: rule.name,
 			color: rule.color,
 			regex: new RegExp(rule.pattern, rule.flags.replace(/g/g, "")),
 		});
