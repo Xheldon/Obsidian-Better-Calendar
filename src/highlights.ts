@@ -1,6 +1,5 @@
 import { App, TFile } from "obsidian";
 import { HighlightRule } from "./settings";
-import { countWords } from "./dailyNotes";
 
 export interface CompiledRule {
 	id: string;
@@ -37,11 +36,10 @@ export function validatePattern(pattern: string, flags: string): string | null {
 }
 
 export interface NoteMeta {
-	wordCount: number;
 	matchedRuleIds: string[];
 }
 
-const EMPTY_META: NoteMeta = { wordCount: 0, matchedRuleIds: [] };
+const EMPTY_META: NoteMeta = { matchedRuleIds: [] };
 
 /**
  * Caches per-file word count and matched highlight rules, keyed by the file's
@@ -98,7 +96,6 @@ export class NoteMetaCache {
 			try {
 				const content = await this.app.vault.cachedRead(file);
 				const meta: NoteMeta = {
-					wordCount: countWords(content),
 					matchedRuleIds: this.compiled
 						.filter((rule) => rule.regex.test(content))
 						.map((rule) => rule.id),

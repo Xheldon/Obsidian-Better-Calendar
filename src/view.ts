@@ -1,11 +1,10 @@
 import { ItemView, WorkspaceLeaf, TFile, setIcon, debounce } from "obsidian";
 import { moment } from "obsidian";
 import type BetterCalendarPlugin from "./main";
-import { MAX_ACTIVITY_DOTS, VIEW_TYPE_CALENDAR } from "./constants";
+import { VIEW_TYPE_CALENDAR } from "./constants";
 import { computeGeometry, placeFocus, visualColumn, GridPlacement } from "./layout";
 import { effectiveLocale, isWeekend, startOfWeek, weekdayLabels, weekStartDay } from "./dateUtils";
 import { createDailyNote, dailyNotePath, dayKey, getDailyNote, DailyNoteSettings } from "./dailyNotes";
-import { NoteMeta } from "./highlights";
 import { CreateNoteModal } from "./createNoteModal";
 
 /** Gap between adjacent month blocks, in px. */
@@ -294,8 +293,8 @@ export class CalendarView extends ItemView {
 		const file = getDailyNote(this.app, date, this.dailySettings!);
 		if (file) {
 			el.addClass("has-note");
-			// Immediate presence dot; decorateDots() upgrades it with word count + rules.
-			this.renderDots(dotsEl, { wordCount: 0, matchedRuleIds: [] }, true);
+			// Show the gray presence dot now; decorateDots() adds rule dots async.
+			this.renderDots(dotsEl, [], true);
 		}
 
 		const vrow = row;
@@ -307,16 +306,12 @@ export class CalendarView extends ItemView {
 		else this.cellsByMonth.set(monthKey, [ref]);
 	}
 
-	private renderDots(dotsEl: HTMLElement, meta: NoteMeta, exists: boolean): void {
+	private renderDots(dotsEl: HTMLElement, matchedRuleIds: string[], exists: boolean): void {
 		dotsEl.empty();
-		if (exists) {
-			const count = Math.max(
-				1,
-				Math.min(MAX_ACTIVITY_DOTS, Math.round(meta.wordCount / this.plugin.settings.wordsPerDot)),
-			);
-			for (let i = 0; i < count; i++) dotsEl.createDiv({ cls: "bc-dot bc-dot-activity" });
-		}
-		for (const id of meta.matchedRuleIds) {
+		// One fixed gray dot signals "a note exists for this day".
+		if (exists) dotsEl.createDiv({ cls: "bc-dot bc-dot-activity" });
+		// Then one colored dot per matched highlight rule.
+		for (const id of matchedRuleIds) {
 			const rule = this.plugin.highlightById.get(id);
 			if (!rule) continue;
 			const dot = dotsEl.createDiv({ cls: "bc-dot bc-dot-rule" });
@@ -336,7 +331,7 @@ export class CalendarView extends ItemView {
 			noted.map(async (ref) => ({ ref, meta: await this.plugin.metaCache.resolve(ref.file!) })),
 		);
 		if (gen !== this.generation) return; // grid was rebuilt meanwhile
-		for (const { ref, meta } of resolved) this.renderDots(ref.dotsEl, meta, true);
+		for (const { ref, meta } of resolved) this.renderDots(ref.dotsEl, meta.matchedRuleIds, true);
 	}
 
 	private updateTitle(p: GridPlacement, locale: string): void {

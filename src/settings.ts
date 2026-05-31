@@ -17,8 +17,6 @@ export interface HighlightRule {
 }
 
 export interface BetterCalendarSettings {
-	/** Words represented by a single activity dot. */
-	wordsPerDot: number;
 	/** First day of the week. */
 	weekStart: WeekStart;
 	/** Ask before creating a missing daily note. */
@@ -34,7 +32,6 @@ export interface BetterCalendarSettings {
 }
 
 export const DEFAULT_SETTINGS: BetterCalendarSettings = {
-	wordsPerDot: 250,
 	weekStart: "locale",
 	confirmBeforeCreate: true,
 	showWeekNumber: false,
@@ -56,7 +53,6 @@ export function normalizeSettings(
 
 	return {
 		...merged,
-		wordsPerDot: clampNumber(merged.wordsPerDot, 1, 100000, DEFAULT_SETTINGS.wordsPerDot),
 		minCellSize: min,
 		maxCellSize: max,
 		highlights: Array.isArray(merged.highlights)

@@ -142,16 +142,6 @@ export async function createDailyNote(
 	}
 }
 
-/** Approximate word count that also handles CJK text (each CJK glyph ≈ 1 word). */
-export function countWords(text: string): number {
-	const stripped = text
-		.replace(/```[\s\S]*?```/g, " ")
-		.replace(/[#>*_`~\-\[\]()]/g, " ");
-	const cjk = stripped.match(/[一-鿿぀-ヿ가-힯]/g)?.length ?? 0;
-	const latin = stripped.match(/[A-Za-z0-9À-ɏ]+/g)?.length ?? 0;
-	return cjk + latin;
-}
-
 export function isFolder(value: unknown): value is TFolder {
 	return value instanceof TFolder;
 }

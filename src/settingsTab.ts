@@ -32,21 +32,6 @@ export class BetterCalendarSettingTab extends PluginSettingTab {
 	private renderGeneral(containerEl: HTMLElement): void {
 		new Setting(containerEl).setName("General").setHeading();
 
-		new Setting(containerEl)
-			.setName("Words per dot")
-			.setDesc("How many words should be represented by a single dot?")
-			.addText((text) =>
-				text
-					.setValue(String(this.plugin.settings.wordsPerDot))
-					.onChange(async (value) => {
-						const n = Number(value);
-						if (Number.isFinite(n) && n > 0) {
-							this.plugin.settings.wordsPerDot = Math.round(n);
-							await this.commit();
-						}
-					}),
-			);
-
 		const locale = moment.locale();
 		const localeFirstDay = moment().localeData().weekdays()[moment().localeData().firstDayOfWeek()];
 		new Setting(containerEl)
