@@ -285,8 +285,8 @@
 	border-color: var(--interactive-accent);
 }
 
-.bc-invalid {
-	border-color: var(--text-error) !important;
+.bc-highlight-rule .bc-pattern-input.bc-invalid {
+	border-color: var(--text-error);
 }
 
 .bc-warning {
