@@ -75,6 +75,7 @@ export class CalendarView extends ItemView {
 		this.resizeObserver.observe(this.bodyEl);
 		// Highlight the day of the active daily note, and keep it in sync.
 		this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.updateActiveDay()));
+		this.updateActiveDay();
 	}
 
 	async onClose(): Promise<void> {
@@ -146,7 +147,6 @@ export class CalendarView extends ItemView {
 		if (!this.bodyEl) return;
 		const settings = this.plugin.settings;
 		this.dailySettings = this.plugin.dailyNoteSettings();
-		this.activeDayKey = this.computeActiveDayKey();
 		const locale = effectiveLocale(settings.localeOverride);
 		const firstDay = weekStartDay(settings.weekStart, locale);
 
@@ -417,9 +417,10 @@ export class CalendarView extends ItemView {
 	/** Move the is-active highlight to the day of the current active note. */
 	private updateActiveDay(): void {
 		const next = this.computeActiveDayKey();
-		if (next === this.activeDayKey) return;
+		// Keep the ring on the last daily note when focus moves to a non-note view.
+		if (!next || next === this.activeDayKey) return;
 		if (this.activeDayKey) this.cellsByKey.get(this.activeDayKey)?.el.removeClass("is-active");
 		this.activeDayKey = next;
-		if (next) this.cellsByKey.get(next)?.el.addClass("is-active");
+		this.cellsByKey.get(next)?.el.addClass("is-active");
 	}
 }
