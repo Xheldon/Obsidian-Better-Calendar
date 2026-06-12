@@ -52,6 +52,14 @@ export function getDailyNote(app: App, date: moment.Moment, settings: DailyNoteS
 	return file instanceof TFile ? file : null;
 }
 
+/** If `file` is a daily note (inside the folder, name parses with the format), its date; else null. */
+export function getDateFromFile(file: TFile, settings: DailyNoteSettings): moment.Moment | null {
+	const folder = settings.folder ? normalizePath(settings.folder).replace(/\/$/, "") : "";
+	if (folder && !file.path.startsWith(folder + "/")) return null;
+	const parsed = moment(file.basename, settings.format, true);
+	return parsed.isValid() ? parsed : null;
+}
+
 /** The vault path a daily note for `date` would live at. */
 export function dailyNotePath(date: moment.Moment, settings: DailyNoteSettings): string {
 	const filename = date.format(settings.format);

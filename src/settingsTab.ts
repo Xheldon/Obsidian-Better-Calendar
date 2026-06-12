@@ -107,8 +107,8 @@ export class BetterCalendarSettingTab extends PluginSettingTab {
 
 		this.addColorSetting(
 			containerEl,
-			"Month outline color",
-			"Outline drawn around a month on hover. Defaults to your theme's accent — turn the toggle off to pick a custom color.",
+			"Month divider color",
+			"Color of the lines that separate months. Default: a subtle theme gray — turn the toggle off to pick a custom color.",
 			() => this.plugin.settings.outlineColor,
 			(v) => {
 				this.plugin.settings.outlineColor = v;
@@ -140,7 +140,7 @@ export class BetterCalendarSettingTab extends PluginSettingTab {
 			.setDesc(desc)
 			.addToggle((t) =>
 				t
-					.setTooltip("Use theme accent color")
+					.setTooltip("Use the default color")
 					.setValue(get() === "")
 					.onChange(async (useTheme) => {
 						set(useTheme ? "" : get() || themeHex);

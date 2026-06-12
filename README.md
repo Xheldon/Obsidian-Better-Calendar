@@ -29,9 +29,9 @@ size.
   with two rows of recent weeks above it, so you land on today with its recent
   history already in view. The ‹ › buttons move the view by one month; **Today**
   snaps back.
-- **Month cues without clutter.** Instead of a header per month, the **1st of
-  each month** shows the month's short name, and **hovering anywhere in a month**
-  traces an outline around exactly that month's days.
+- **Month cues without clutter.** Thin gray **divider lines** separate the
+  months, and the **1st of each month** shows a faint centered watermark of the
+  month's name (the year on Jan 1).
 - **Custom highlights.** Add rules that test each daily note against a regular
   expression and drop a **colored dot** on matching days — for example
   `^## 今日运动` to see at a glance which days you exercised.
@@ -49,8 +49,8 @@ Daily notes). Better Calendar reads its *New file location*, *Date format*, and
   **“Better Calendar: Open calendar.”** Drag it anywhere, including the main
   editor area, where the extra width lets it show several months at once.
 - Click a day to open/create its note. `Ctrl`/`Cmd`-click opens it in a new tab.
-- Hover a month to see its outline; the dots under each date show note presence
-  and any matched highlight rules.
+- The day of the note you're currently viewing is ringed; dots under each date
+  show note presence and any matched highlight rules.
 
 ## Settings
 
@@ -60,9 +60,9 @@ Daily notes). Better Calendar reads its *New file location*, *Date format*, and
 | **Confirm before creating new note** | Ask before creating a missing daily note. |
 | **Show week number** | Add a week-number column to each month block. |
 | **Minimum / Maximum day size** | Clamp the day-cell edge (px). Drives how many months fit. |
-| **Month outline / Day hover color** | Hover colors; default to the theme accent, or pick a custom color. |
+| **Month divider / Day hover color** | Divider defaults to a theme gray, hover to the theme accent; either can be custom. |
 | **Override locale** | Use a different locale for weekday / month names. |
-| **Highlights** | Name + regex (+ flags) + color rules; matching days get a colored dot. |
+| **Highlights** | Regex (+ flags) + color rules; matching days get a colored dot. |
 
 ### Highlight rules
 

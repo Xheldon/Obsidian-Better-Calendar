@@ -118,7 +118,7 @@
 	justify-content: flex-start;
 	gap: 2px;
 	padding: 3px 2px;
-	border-radius: var(--radius-s);
+	border-radius: 0;
 	font-size: clamp(11px, calc(var(--bc-cell) * 0.32), 18px);
 	line-height: 1.1;
 	color: var(--text-normal);
@@ -144,29 +144,30 @@
 	font-weight: 600;
 }
 
-.bc-month-badge {
-	position: absolute;
-	top: 2px;
-	left: 4px;
-	font-size: clamp(9px, calc(var(--bc-cell) * 0.22), 13px);
-	font-weight: 700;
-	color: var(--text-accent);
-}
-
-/* Translucent year watermark on Jan 1, sitting behind the day number. */
+/* Centered, translucent watermark behind the number on the 1st of a month
+   (the month name) or on Jan 1 (the year). */
+.bc-month-badge,
 .bc-year-badge {
 	position: absolute;
 	inset: 0;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-size: clamp(14px, calc(var(--bc-cell) * 0.36), 32px);
 	font-weight: 800;
-	letter-spacing: -0.03em;
-	color: var(--text-normal);
-	opacity: 0.15;
+	color: var(--text-accent);
 	pointer-events: none;
 	z-index: 0;
+}
+
+.bc-month-badge {
+	font-size: clamp(13px, calc(var(--bc-cell) * 0.42), 34px);
+	opacity: 0.3;
+}
+
+.bc-year-badge {
+	font-size: clamp(13px, calc(var(--bc-cell) * 0.34), 30px);
+	letter-spacing: -0.03em;
+	opacity: 0.24;
 }
 
 .bc-dots {
@@ -194,17 +195,15 @@
 	background-color: var(--bc-dot-color, var(--interactive-accent));
 }
 
-/* Month hover: faint tint + square corners so the inline box-shadow outline
-   draws as straight lines instead of following the cell's rounded corners. */
-.bc-day.is-month-hover {
-	background-color: var(--background-modifier-hover);
-	border-radius: 0;
-}
-
-/* Single-day hover: a stronger accent tint so the focused day stands out,
-   even within an outlined (month-hovered) area. */
+/* Single-day hover: a stronger accent tint so the focused day stands out. */
 .bc-day:hover {
 	background-color: color-mix(in srgb, var(--bc-hover-color, var(--interactive-accent)) 18%, transparent);
+}
+
+/* The active daily note's day gets an accent ring. */
+.bc-day.is-active {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: -2px;
 }
 
 /* Today wins over the states above. */
@@ -214,7 +213,8 @@
 }
 
 .bc-day.is-today .bc-day-num,
-.bc-day.is-today .bc-month-badge {
+.bc-day.is-today .bc-month-badge,
+.bc-day.is-today .bc-year-badge {
 	color: var(--text-on-accent);
 }
 

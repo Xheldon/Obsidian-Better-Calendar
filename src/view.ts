@@ -4,7 +4,7 @@ import type BetterCalendarPlugin from "./main";
 import { VIEW_TYPE_CALENDAR } from "./constants";
 import { computeGeometry, placeFocus, visualColumn, GridPlacement } from "./layout";
 import { effectiveLocale, isWeekend, startOfWeek, weekdayLabels, weekStartDay } from "./dateUtils";
-import { createDailyNote, dailyNotePath, dayKey, getDailyNote, DailyNoteSettings } from "./dailyNotes";
+import { createDailyNote, dailyNotePath, dayKey, getDailyNote, getDateFromFile, DailyNoteSettings } from "./dailyNotes";
 import { CreateNoteModal } from "./createNoteModal";
 
 /** No gap between weeks — the grid reads as one continuous strip. */
@@ -40,8 +40,9 @@ export class CalendarView extends ItemView {
 	/** Daily-note config snapshot for the current render. */
 	private dailySettings: DailyNoteSettings | null = null;
 	private cellsByVisual = new Map<string, CellRef>();
-	private cellsByMonth = new Map<string, CellRef[]>();
-	private hoveredMonth: string | null = null;
+	private cellsByKey = new Map<string, CellRef>();
+	/** dayKey of the currently active daily note, if any. */
+	private activeDayKey: string | null = null;
 	/** Bumped on every grid rebuild so async dot updates can detect staleness. */
 	private generation = 0;
 
@@ -72,6 +73,8 @@ export class CalendarView extends ItemView {
 		this.refreshData();
 		this.resizeObserver = new ResizeObserver(() => this.scheduleRender());
 		this.resizeObserver.observe(this.bodyEl);
+		// Highlight the day of the active daily note, and keep it in sync.
+		this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.updateActiveDay()));
 	}
 
 	async onClose(): Promise<void> {
@@ -116,8 +119,6 @@ export class CalendarView extends ItemView {
 		this.gridEl = this.bodyEl.createDiv({ cls: "bc-grid" });
 
 		this.registerDomEvent(this.gridEl, "click", (e) => this.onGridClick(e));
-		this.registerDomEvent(this.gridEl, "mouseover", (e) => this.onGridHover(e));
-		this.registerDomEvent(this.gridEl, "mouseleave", () => this.setHoveredMonth(null));
 	}
 
 	// --- navigation -----------------------------------------------------------
@@ -145,6 +146,7 @@ export class CalendarView extends ItemView {
 		if (!this.bodyEl) return;
 		const settings = this.plugin.settings;
 		this.dailySettings = this.plugin.dailyNoteSettings();
+		this.activeDayKey = this.computeActiveDayKey();
 		const locale = effectiveLocale(settings.localeOverride);
 		const firstDay = weekStartDay(settings.weekStart, locale);
 
@@ -188,8 +190,7 @@ export class CalendarView extends ItemView {
 		const grid = this.gridEl;
 		grid.empty();
 		this.cellsByVisual.clear();
-		this.cellsByMonth.clear();
-		this.hoveredMonth = null;
+		this.cellsByKey.clear();
 
 		// Build the column tracks: [gap] [weeknum?] [7 day cells] per block.
 		const tracks: string[] = [];
@@ -219,8 +220,8 @@ export class CalendarView extends ItemView {
 
 		// Custom colors override the theme accent; empty inherits it via CSS var fallback.
 		const { outlineColor, hoverColor } = this.plugin.settings;
-		if (outlineColor) grid.style.setProperty("--bc-outline-color", outlineColor);
-		else grid.style.removeProperty("--bc-outline-color");
+		if (outlineColor) grid.style.setProperty("--bc-divider-color", outlineColor);
+		else grid.style.removeProperty("--bc-divider-color");
 		if (hoverColor) grid.style.setProperty("--bc-hover-color", hoverColor);
 		else grid.style.removeProperty("--bc-hover-color");
 
@@ -259,6 +260,12 @@ export class CalendarView extends ItemView {
 				}
 			}
 		}
+
+		// Persistent gray month dividers, drawn from both sides so corners seal.
+		for (const ref of this.cellsByVisual.values()) {
+			const shadow = this.monthDivider(ref);
+			if (shadow) ref.el.style.boxShadow = shadow;
+		}
 		return gen;
 	}
 
@@ -284,16 +291,19 @@ export class CalendarView extends ItemView {
 		el.dataset.month = monthKey;
 		if (isWeekend(dow)) el.addClass("is-weekend");
 		if (date.isSame(today, "day")) el.addClass("is-today");
+		if (key === this.activeDayKey) el.addClass("is-active");
 
-		// New year: a translucent year watermark behind Jan 1.
-		if (date.month() === 0 && date.date() === 1) {
-			el.createSpan({ cls: "bc-year-badge", text: date.format("YYYY") });
+		// 1st of the month: a centered translucent watermark behind the number —
+		// the year on Jan 1, the month's short name otherwise.
+		if (date.date() === 1) {
+			const isJan = date.month() === 0;
+			el.createSpan({
+				cls: isJan ? "bc-year-badge" : "bc-month-badge",
+				text: isJan ? date.format("YYYY") : date.clone().locale(locale).format("MMM"),
+			});
 		}
 
 		const top = el.createDiv({ cls: "bc-day-top" });
-		if (date.date() === 1) {
-			top.createSpan({ cls: "bc-month-badge", text: date.clone().locale(locale).format("MMM") });
-		}
 		top.createSpan({ cls: "bc-day-num", text: `${date.date()}` });
 
 		const dotsEl = el.createDiv({ cls: "bc-dots" });
@@ -308,9 +318,7 @@ export class CalendarView extends ItemView {
 		const vcol = visualColumn(blockCol, day);
 		const ref: CellRef = { el, dotsEl, key, monthKey, vrow, vcol, file };
 		this.cellsByVisual.set(`${vrow}:${vcol}`, ref);
-		const bucket = this.cellsByMonth.get(monthKey);
-		if (bucket) bucket.push(ref);
-		else this.cellsByMonth.set(monthKey, [ref]);
+		this.cellsByKey.set(key, ref);
 	}
 
 	private renderDots(dotsEl: HTMLElement, matchedRuleIds: string[], exists: boolean): void {
@@ -377,47 +385,41 @@ export class CalendarView extends ItemView {
 		await leaf.openFile(file);
 	}
 
-	private onGridHover(e: MouseEvent): void {
-		const cell = (e.target as HTMLElement).closest(".bc-day") as HTMLElement | null;
-		this.setHoveredMonth(cell?.dataset.month ?? null);
-	}
-
-	private setHoveredMonth(monthKey: string | null): void {
-		if (monthKey === this.hoveredMonth) return;
-
-		if (this.hoveredMonth) {
-			for (const ref of this.cellsByMonth.get(this.hoveredMonth) ?? []) {
-				ref.el.removeClass("is-month-hover");
-				ref.el.style.boxShadow = "";
-			}
-		}
-
-		this.hoveredMonth = monthKey;
-		if (!monthKey) return;
-
-		for (const ref of this.cellsByMonth.get(monthKey) ?? []) {
-			ref.el.addClass("is-month-hover");
-			ref.el.style.boxShadow = this.edgeShadow(ref, monthKey);
-		}
-	}
-
 	/**
-	 * Build an inset box-shadow that draws a border only on the cell sides that
-	 * face a different month (or the grid edge), tracing the month's perimeter
-	 * without shifting layout. Uses visual neighbors, not chronological ones.
+	 * Inset box-shadow drawing a 1px divider on the cell sides that face a
+	 * different month. Every cell draws its own boundary edges, so each seam is
+	 * painted from both sides and its corners stay sealed. Sides with no neighbor
+	 * (the grid's outer edge) are left undrawn, so only month-to-month seams show.
 	 */
-	private edgeShadow(ref: CellRef, monthKey: string): string {
-		const w = 2;
-		const color = "var(--bc-outline-color, var(--interactive-accent))";
-		const isEdge = (dr: number, dc: number): boolean => {
+	private monthDivider(ref: CellRef): string {
+		const w = 1;
+		const color = "var(--bc-divider-color, var(--background-modifier-border))";
+		const isSeam = (dr: number, dc: number): boolean => {
 			const n = this.cellsByVisual.get(`${ref.vrow + dr}:${ref.vcol + dc}`);
-			return !n || n.monthKey !== monthKey;
+			return n !== undefined && n.monthKey !== ref.monthKey;
 		};
 		const parts: string[] = [];
-		if (isEdge(-1, 0)) parts.push(`inset 0 ${w}px 0 0 ${color}`);
-		if (isEdge(1, 0)) parts.push(`inset 0 -${w}px 0 0 ${color}`);
-		if (isEdge(0, -1)) parts.push(`inset ${w}px 0 0 0 ${color}`);
-		if (isEdge(0, 1)) parts.push(`inset -${w}px 0 0 0 ${color}`);
+		if (isSeam(-1, 0)) parts.push(`inset 0 ${w}px 0 0 ${color}`);
+		if (isSeam(1, 0)) parts.push(`inset 0 -${w}px 0 0 ${color}`);
+		if (isSeam(0, -1)) parts.push(`inset ${w}px 0 0 0 ${color}`);
+		if (isSeam(0, 1)) parts.push(`inset -${w}px 0 0 0 ${color}`);
 		return parts.join(", ");
+	}
+
+	/** dayKey of the active file if it is a daily note, else null. */
+	private computeActiveDayKey(): string | null {
+		const file = this.app.workspace.getActiveFile();
+		if (!file) return null;
+		const date = getDateFromFile(file, this.plugin.dailyNoteSettings());
+		return date ? dayKey(date) : null;
+	}
+
+	/** Move the is-active highlight to the day of the current active note. */
+	private updateActiveDay(): void {
+		const next = this.computeActiveDayKey();
+		if (next === this.activeDayKey) return;
+		if (this.activeDayKey) this.cellsByKey.get(this.activeDayKey)?.el.removeClass("is-active");
+		this.activeDayKey = next;
+		if (next) this.cellsByKey.get(next)?.el.addClass("is-active");
 	}
 }
