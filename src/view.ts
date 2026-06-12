@@ -233,7 +233,6 @@ export class CalendarView extends ItemView {
 					cls: "bc-weekday" + (isWeekend(dow) ? " is-weekend" : ""),
 					text: labels[d],
 				});
-				h.style.gridRow = "1";
 				h.style.gridColumn = `${blockDayCols[b][d]}`;
 			}
 		}
@@ -358,8 +357,9 @@ export class CalendarView extends ItemView {
 	// --- interaction ----------------------------------------------------------
 
 	private onGridClick(e: MouseEvent): void {
-		const cell = (e.target as HTMLElement).closest(".bc-day") as HTMLElement | null;
-		const key = cell?.dataset.key;
+		const target = e.target;
+		if (!(target instanceof HTMLElement)) return;
+		const key = target.closest<HTMLElement>(".bc-day")?.dataset.key;
 		if (!key) return;
 		const newLeaf = e.ctrlKey || e.metaKey;
 		void this.openOrCreate(moment(key, "YYYY-MM-DD"), newLeaf);

@@ -30,8 +30,6 @@ export class BetterCalendarSettingTab extends PluginSettingTab {
 	// --- General --------------------------------------------------------------
 
 	private renderGeneral(containerEl: HTMLElement): void {
-		new Setting(containerEl).setName("General").setHeading();
-
 		const locale = moment.locale();
 		const localeFirstDay = moment().localeData().weekdays()[moment().localeData().firstDayOfWeek()];
 		new Setting(containerEl)
@@ -133,7 +131,7 @@ export class BetterCalendarSettingTab extends PluginSettingTab {
 		get: () => string,
 		set: (value: string) => void,
 	): void {
-		const themeHex = this.themeAccentHex();
+		const defaultHex = "#3aa675";
 		let picker: ColorComponent;
 		new Setting(containerEl)
 			.setName(name)
@@ -143,34 +141,22 @@ export class BetterCalendarSettingTab extends PluginSettingTab {
 					.setTooltip("Use the default color")
 					.setValue(get() === "")
 					.onChange(async (useTheme) => {
-						set(useTheme ? "" : get() || themeHex);
+						set(useTheme ? "" : get() || defaultHex);
 						await this.commit();
 						picker.setDisabled(useTheme);
-						picker.setValue(get() || themeHex);
+						picker.setValue(get() || defaultHex);
 					}),
 			)
 			.addColorPicker((cp) => {
 				picker = cp;
 				cp
-					.setValue(get() || themeHex)
+					.setValue(get() || defaultHex)
 					.setDisabled(get() === "")
 					.onChange(async (value) => {
 						set(value);
 						await this.commit();
 					});
 			});
-	}
-
-	/** Reads the theme accent color as a #rrggbb hex via a hidden probe element. */
-	private themeAccentHex(): string {
-		const probe = this.containerEl.createDiv();
-		probe.style.color = "var(--interactive-accent)";
-		probe.style.display = "none";
-		const rgb = getComputedStyle(probe).color;
-		probe.remove();
-		const parts = rgb.match(/\d+/g);
-		if (!parts || parts.length < 3) return "#3aa675";
-		return "#" + parts.slice(0, 3).map((n) => Number(n).toString(16).padStart(2, "0")).join("");
 	}
 
 	// --- Highlights -----------------------------------------------------------
@@ -249,11 +235,11 @@ export class BetterCalendarSettingTab extends PluginSettingTab {
 			const chip = flagsEl.createEl("button", { cls: "bc-flag-chip", text: flag });
 			chip.setAttribute("aria-label", flagInfo[flag]);
 			chip.toggleClass("is-on", rule.flags.includes(flag));
-			chip.addEventListener("click", async () => {
+			chip.addEventListener("click", () => {
 				const on = rule.flags.includes(flag);
 				rule.flags = (on ? rule.flags.replace(flag, "") : rule.flags + flag).replace(/g/g, "");
 				chip.toggleClass("is-on", !on);
-				await this.commit();
+				void this.commit();
 			});
 		}
 

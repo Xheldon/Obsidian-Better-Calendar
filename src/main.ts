@@ -23,7 +23,7 @@ export default class BetterCalendarPlugin extends Plugin {
 		this.registerView(VIEW_TYPE_CALENDAR, (leaf) => new CalendarView(leaf, this));
 
 		this.addCommand({
-			id: "open-better-calendar",
+			id: "open",
 			name: "Open calendar",
 			callback: () => void this.activateView(),
 		});
@@ -52,7 +52,7 @@ export default class BetterCalendarPlugin extends Plugin {
 			if (!leaf) return;
 			await leaf.setViewState({ type: VIEW_TYPE_CALENDAR, active: true });
 		}
-		workspace.revealLeaf(leaf);
+		await workspace.revealLeaf(leaf);
 	}
 
 	/** Add the calendar to the right sidebar tab strip if it isn't open already. */
@@ -68,7 +68,8 @@ export default class BetterCalendarPlugin extends Plugin {
 	}
 
 	async loadSettings(): Promise<void> {
-		this.settings = normalizeSettings(await this.loadData());
+		const raw = (await this.loadData()) as Partial<BetterCalendarSettings> | null;
+		this.settings = normalizeSettings(raw);
 	}
 
 	async saveSettings(): Promise<void> {

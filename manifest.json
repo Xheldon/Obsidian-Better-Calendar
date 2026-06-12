@@ -1,8 +1,8 @@
 {
   "id": "better-calendar",
   "name": "Better Calendar",
-  "version": "1.0.1",
-  "minAppVersion": "1.4.0",
+  "version": "1.0.2",
+  "minAppVersion": "1.7.2",
   "description": "A compact, space-filling calendar for your daily notes — open or create them from your template, and mark days that match your own highlight rules.",
   "author": "Xheldon",
   "authorUrl": "https://github.com/xheldon",
