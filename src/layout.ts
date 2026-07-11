@@ -31,7 +31,10 @@ function clamp(value: number, min: number, max: number): number {
  *
  * - Columns: as many whole blocks as fit at the minimum cell width — a wider
  *   pane shows more months side by side.
- * - Cell width: fills each column's share of the width (capped at maxCell).
+ * - Cell width: fills each column's share of the width unconditionally, so the
+ *   grid always spans the full pane; between "k weeks fit" and "k+1 weeks fit"
+ *   the cells simply grow wider (slightly rectangular) instead of leaving
+ *   side margins.
  * - Rows: enough near-square rows to fill the height — a taller pane shows more
  *   weeks per column instead of leaving blank space below.
  * - Cell height: sized to fill the height across those rows (within the range),
@@ -50,10 +53,9 @@ export function computeGeometry(
 	const usableHeight = Math.max(availableHeight, safeMin);
 
 	const columns = clamp(Math.floor(usableWidth / blockWidthAtMin), 1, MAX_BLOCK_COLUMNS);
-	const cellW = clamp(
+	const cellW = Math.max(
+		safeMin,
 		Math.floor((usableWidth - columns * weekColumnPx) / (columns * DAYS_PER_WEEK)),
-		minCell,
-		maxCell,
 	);
 
 	// Pick a row count that keeps cells about square, then size them to fill the height.
