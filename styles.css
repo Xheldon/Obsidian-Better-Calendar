@@ -27,14 +27,14 @@
 }
 
 .bc-title-month {
-	font-size: 1.5em;
+	font-size: var(--font-ui-large, 20px);
 	font-weight: 800;
 	color: var(--text-normal);
 	white-space: nowrap;
 }
 
 .bc-title-year {
-	font-size: 1.5em;
+	font-size: var(--font-ui-large, 20px);
 	font-weight: 700;
 	color: var(--text-accent);
 }
@@ -65,7 +65,7 @@
 }
 
 .bc-today-btn {
-	font-size: 0.82em;
+	font-size: var(--font-ui-small, 13px);
 	padding: 4px 10px;
 }
 
@@ -91,7 +91,7 @@
 	align-items: flex-end;
 	justify-content: center;
 	padding-bottom: 4px;
-	font-size: 11px;
+	font-size: var(--font-ui-smaller, 11px);
 	font-weight: 600;
 	color: var(--text-muted);
 }
@@ -120,7 +120,10 @@
 	gap: 2px;
 	padding: 3px 2px;
 	border-radius: 0;
-	font-size: clamp(11px, calc(var(--bc-cell) * 0.32), 18px);
+	/* Scale with the cell on tight layouts, but cap at the theme's UI font size
+	   so day numbers never read larger than editor body text — extra cell space
+	   goes to whitespace, not bigger digits. */
+	font-size: clamp(var(--font-ui-smaller, 11px), calc(var(--bc-cell) * 0.32), var(--font-ui-medium, 15px));
 	line-height: 1.1;
 	color: var(--text-normal);
 	cursor: pointer;
@@ -161,12 +164,12 @@
 }
 
 .bc-month-badge {
-	font-size: clamp(13px, calc(var(--bc-cell) * 0.42), 34px);
+	font-size: clamp(13px, calc(var(--bc-cell) * 0.42), 28px);
 	opacity: 0.3;
 }
 
 .bc-year-badge {
-	font-size: clamp(13px, calc(var(--bc-cell) * 0.34), 30px);
+	font-size: clamp(13px, calc(var(--bc-cell) * 0.34), 24px);
 	letter-spacing: -0.03em;
 	opacity: 0.24;
 }
