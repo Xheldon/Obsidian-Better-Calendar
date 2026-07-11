@@ -74,7 +74,7 @@ export class BetterCalendarSettingTab extends PluginSettingTab {
 		containerEl.createEl("p", {
 			cls: "setting-item-description",
 			text:
-				"Day cells stay within this size range. A wider pane fits more months side-by-side and a taller pane adds more rows, instead of stretching the cells.",
+				"The grid always fills the pane's width; once another whole week fits at the minimum size, a new week column is added. The maximum bounds cell height (a taller pane adds rows instead).",
 		});
 
 		new Setting(containerEl)
@@ -92,7 +92,7 @@ export class BetterCalendarSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Maximum day size")
-			.setDesc("Largest day-cell edge, in pixels.")
+			.setDesc("Largest day-cell height, in pixels. Width always stretches to fill the pane.")
 			.addText((text) =>
 				text.setValue(String(this.plugin.settings.maxCellSize)).onChange(async (value) => {
 					const n = Number(value);

@@ -23,7 +23,8 @@ export interface BetterCalendarSettings {
 	showWeekNumber: boolean;
 	/** "system" uses Obsidian's locale; otherwise a moment.js locale id. */
 	localeOverride: string;
-	/** Square day-cell edge is clamped to [minCellSize, maxCellSize] px. */
+	/** Day-cell height is clamped to [minCellSize, maxCellSize] px; width has
+	 * no upper bound — it stretches so the grid always fills the pane. */
 	minCellSize: number;
 	maxCellSize: number;
 	/** Month-hover outline color; "" follows the theme accent. */
