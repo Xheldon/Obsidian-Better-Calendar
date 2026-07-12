@@ -71,37 +71,6 @@ export class BetterCalendarSettingTab extends PluginSettingTab {
 
 	private renderAppearance(containerEl: HTMLElement): void {
 		new Setting(containerEl).setName("Appearance").setHeading();
-		containerEl.createEl("p", {
-			cls: "setting-item-description",
-			text:
-				"The grid always fills the pane's width; once another whole week fits at the minimum size, a new week column is added. The maximum bounds cell height (a taller pane adds rows instead).",
-		});
-
-		new Setting(containerEl)
-			.setName("Minimum day size")
-			.setDesc("Smallest day-cell edge, in pixels.")
-			.addText((text) =>
-				text.setValue(String(this.plugin.settings.minCellSize)).onChange(async (value) => {
-					const n = Number(value);
-					if (Number.isFinite(n) && n > 0) {
-						this.plugin.settings.minCellSize = Math.round(n);
-						await this.commit();
-					}
-				}),
-			);
-
-		new Setting(containerEl)
-			.setName("Maximum day size")
-			.setDesc("Largest day-cell height, in pixels. Width always stretches to fill the pane.")
-			.addText((text) =>
-				text.setValue(String(this.plugin.settings.maxCellSize)).onChange(async (value) => {
-					const n = Number(value);
-					if (Number.isFinite(n) && n > 0) {
-						this.plugin.settings.maxCellSize = Math.round(n);
-						await this.commit();
-					}
-				}),
-			);
 
 		this.addColorSetting(
 			containerEl,

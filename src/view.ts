@@ -1,7 +1,7 @@
 import { ItemView, WorkspaceLeaf, TFile, setIcon, debounce } from "obsidian";
 import { moment } from "obsidian";
 import type BetterCalendarPlugin from "./main";
-import { VIEW_TYPE_CALENDAR } from "./constants";
+import { CELL_MAX, CELL_MIN, VIEW_TYPE_CALENDAR } from "./constants";
 import { computeGeometry, placeFocus, visualColumn, GridPlacement } from "./layout";
 import { effectiveLocale, isWeekend, startOfWeek, weekdayLabels, weekStartDay } from "./dateUtils";
 import { createDailyNote, dailyNotePath, dayKey, getDailyNote, getDateFromFile, DailyNoteSettings } from "./dailyNotes";
@@ -162,8 +162,8 @@ export class CalendarView extends ItemView {
 		const geometry = computeGeometry(
 			width,
 			height - WEEKDAY_ROW_H,
-			settings.minCellSize,
-			settings.maxCellSize,
+			CELL_MIN,
+			CELL_MAX,
 			overhead,
 		);
 		const placement = placeFocus(geometry);
