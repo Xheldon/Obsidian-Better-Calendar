@@ -1,8 +1,10 @@
 export const VIEW_TYPE_CALENDAR = "better-calendar-view";
 
-/** The day cell is square; its edge is clamped to this range (in px). */
-export const ABS_MIN_CELL = 18;
-export const ABS_MAX_CELL = 200;
+/** Fixed day-cell sizing: height stays within this range (in px); width
+ * stretches so the grid always fills the pane. Not user-configurable — the
+ * layout adapts to the pane, keeping typography and density consistent. */
+export const CELL_MIN = 34;
+export const CELL_MAX = 52;
 
 /** Hard caps so a huge pane never tries to render an absurd number of cells. */
 export const MAX_BLOCK_COLUMNS = 6;
