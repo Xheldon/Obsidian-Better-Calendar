@@ -40,7 +40,7 @@ export const DEFAULT_SETTINGS: BetterCalendarSettings = {
 	showWeekNumber: false,
 	localeOverride: "system",
 	minCellSize: 34,
-	maxCellSize: 72,
+	maxCellSize: 52,
 	outlineColor: "",
 	hoverColor: "",
 	highlights: [],

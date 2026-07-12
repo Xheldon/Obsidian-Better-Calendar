@@ -58,8 +58,10 @@ export function computeGeometry(
 		Math.floor((usableWidth - columns * weekColumnPx) / (columns * DAYS_PER_WEEK)),
 	);
 
-	// Pick a row count that keeps cells about square, then size them to fill the height.
-	const rows = clamp(Math.max(1, Math.round(usableHeight / cellW)), 1, MAX_BLOCK_ROWS);
+	// Pick a row count from the height-capped edge (not the stretched width), so
+	// extra height turns into more visible weeks rather than taller cells.
+	const targetH = Math.min(cellW, maxCell);
+	const rows = clamp(Math.max(1, Math.round(usableHeight / targetH)), 1, MAX_BLOCK_ROWS);
 	const cellH = clamp(Math.floor(usableHeight / rows), minCell, maxCell);
 
 	return { columns, rows, cellW, cellH };

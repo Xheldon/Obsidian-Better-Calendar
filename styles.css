@@ -116,7 +116,9 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	justify-content: flex-start;
+	/* Center the number+dots group so tall cells don't read as a digit
+	   floating over dead space. */
+	justify-content: center;
 	gap: 2px;
 	padding: 3px 2px;
 	border-radius: 0;
