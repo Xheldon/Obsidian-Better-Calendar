@@ -15,6 +15,9 @@ on:
 
 permissions:
   contents: write
+  # For release-asset provenance attestations (actions/attest-build-provenance).
+  id-token: write
+  attestations: write
 
 jobs:
   release:
@@ -37,6 +40,15 @@ jobs:
       - name: Read manifest version
         id: meta
         run: echo "version=$(jq -r .version manifest.json)" >> "$GITHUB_OUTPUT"
+
+      # Lets users cryptographically verify the release assets were built
+      # from this repository (the Obsidian review bot recommends this).
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            main.js
+            styles.css
 
       - name: Publish release
         env:

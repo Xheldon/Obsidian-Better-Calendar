@@ -1,11 +1,21 @@
 import { ItemView, WorkspaceLeaf, TFile, setIcon, debounce } from "obsidian";
 import { moment } from "obsidian";
 import type BetterCalendarPlugin from "./main";
-import { CELL_MAX, CELL_MIN, VIEW_TYPE_CALENDAR } from "./constants";
+import { VIEW_TYPE_CALENDAR } from "./constants";
 import { computeGeometry, placeFocus, visualColumn, GridPlacement } from "./layout";
 import { effectiveLocale, isWeekend, startOfWeek, weekdayLabels, weekStartDay } from "./dateUtils";
-import { createDailyNote, dailyNotePath, dayKey, getDailyNote, getDateFromFile, DailyNoteSettings } from "./dailyNotes";
+import { dayKey } from "./dailyNotes";
+import {
+	DiaryConfig,
+	createDiaryNote,
+	diaryDateFromPath,
+	diaryPathForDate,
+	getDiaryConfig,
+	getDiaryNote,
+} from "./diary";
 import { CreateNoteModal } from "./createNoteModal";
+import { DiaryPanel } from "./panel";
+import { t } from "./i18n";
 
 /** No gap between weeks — the grid reads as one continuous strip. */
 const BLOCK_GAP = 0;
@@ -13,6 +23,12 @@ const BLOCK_GAP = 0;
 const WEEKNUM_W = 26;
 /** Height of the weekday header row, in px. */
 const WEEKDAY_ROW_H = 22;
+/** Horizontal padding of .better-calendar (12px each side, see styles.css). */
+const PANE_PADDING_H = 24;
+/** Gap between the calendar column and the stats column (.bc-top). */
+const COLUMN_GAP = 10;
+/** Minimum width of the side stats column (.bc-side min-width). */
+const SIDE_MIN_W = 72;
 
 interface CellRef {
 	el: HTMLElement;
@@ -31,14 +47,18 @@ export class CalendarView extends ItemView {
 	private titleYearEl!: HTMLElement;
 	private bodyEl!: HTMLElement;
 	private gridEl!: HTMLElement;
+	private sideEl!: HTMLElement;
+	private panelScrollEl!: HTMLElement;
+	private inputBarEl!: HTMLElement;
+	private panel!: DiaryPanel;
 
 	/** Start-of-week date of the top-left visible week. */
 	private firstVisibleWeekStart: moment.Moment;
 	/** When true, today is auto-pinned to the focus slot on every (re)layout. */
 	private pinnedToToday = true;
 
-	/** Daily-note config snapshot for the current render. */
-	private dailySettings: DailyNoteSettings | null = null;
+	/** Diary config snapshot for the current render. */
+	private diaryConfig: DiaryConfig | null = null;
 	private cellsByVisual = new Map<string, CellRef>();
 	private cellsByKey = new Map<string, CellRef>();
 	/** dayKey of the currently active daily note, if any. */
@@ -47,13 +67,13 @@ export class CalendarView extends ItemView {
 	private generation = 0;
 
 	private resizeObserver: ResizeObserver | null = null;
-	private readonly scheduleRender: () => void;
+	private readonly schedulePanelResize: () => void;
 
 	constructor(leaf: WorkspaceLeaf, plugin: BetterCalendarPlugin) {
 		super(leaf);
 		this.plugin = plugin;
 		this.firstVisibleWeekStart = moment().startOf("day");
-		this.scheduleRender = debounce(() => this.render(), 60, true);
+		this.schedulePanelResize = debounce(() => this.panel?.onResize(), 120, true);
 	}
 
 	getViewType(): string {
@@ -71,8 +91,16 @@ export class CalendarView extends ItemView {
 	async onOpen(): Promise<void> {
 		this.buildChrome();
 		this.refreshData();
-		this.resizeObserver = new ResizeObserver(() => this.scheduleRender());
-		this.resizeObserver.observe(this.bodyEl);
+		// Registered once here (not in the rebuildable chrome): the panel's
+		// midnight/clock heartbeat.
+		this.registerInterval(window.setInterval(() => this.panel?.tick(), 30_000));
+		// The calendar itself is fixed-size; resizes only toggle the two-column
+		// mode and re-flow the width-adaptive heatmap.
+		this.resizeObserver = new ResizeObserver(() => {
+			this.applyLayout();
+			this.schedulePanelResize();
+		});
+		this.resizeObserver.observe(this.contentEl);
 		// Highlight the day of the active daily note, and keep it in sync.
 		this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.updateActiveDay()));
 		this.updateActiveDay();
@@ -83,9 +111,22 @@ export class CalendarView extends ItemView {
 		this.resizeObserver = null;
 	}
 
-	/** Re-render (called on vault changes and settings saves). */
-	refreshData(): void {
+	/** Re-render everything (called on vault changes and settings saves). */
+	refreshData(structural = true): void {
+		this.applyLayout();
 		this.render();
+		this.panel?.refresh(structural);
+	}
+
+	/** Move keyboard focus into the quick-input box. */
+	focusInput(): void {
+		this.panel?.focusInput();
+	}
+
+	/** Tear down and rebuild the whole DOM (e.g. after a language change). */
+	rebuild(): void {
+		this.buildChrome();
+		this.refreshData();
 	}
 
 	// --- chrome ---------------------------------------------------------------
@@ -95,31 +136,82 @@ export class CalendarView extends ItemView {
 		root.empty();
 		root.addClass("better-calendar");
 
-		const nav = root.createDiv({ cls: "bc-nav" });
+		// Top row: the calendar column, plus (in wide panes) the stats column.
+		const top = root.createDiv({ cls: "bc-top" });
+		const calCol = top.createDiv({ cls: "bc-cal-col" });
+
+		const nav = calCol.createDiv({ cls: "bc-nav" });
 		const title = nav.createDiv({ cls: "bc-title" });
 		this.titleMonthEl = title.createSpan({ cls: "bc-title-month" });
 		this.titleYearEl = title.createSpan({ cls: "bc-title-year" });
 
 		const controls = nav.createDiv({ cls: "bc-controls" });
-		const prev = controls.createEl("button", { cls: "bc-nav-btn", attr: { "aria-label": "Previous month" } });
+		const prev = controls.createEl("button", { cls: "bc-nav-btn", attr: { "aria-label": t("prevMonth") } });
 		setIcon(prev, "chevron-left");
 		this.registerDomEvent(prev, "click", () => this.shiftMonths(-1));
 
 		const today = controls.createEl("button", {
 			cls: "bc-nav-btn bc-today-btn",
-			text: "Today",
-			attr: { "aria-label": "Go to today" },
+			text: t("today"),
+			attr: { "aria-label": t("goToToday") },
 		});
 		this.registerDomEvent(today, "click", () => this.goToToday());
 
-		const next = controls.createEl("button", { cls: "bc-nav-btn", attr: { "aria-label": "Next month" } });
+		const next = controls.createEl("button", { cls: "bc-nav-btn", attr: { "aria-label": t("nextMonth") } });
 		setIcon(next, "chevron-right");
 		this.registerDomEvent(next, "click", () => this.shiftMonths(1));
 
-		this.bodyEl = root.createDiv({ cls: "bc-body" });
+		this.bodyEl = calCol.createDiv({ cls: "bc-body" });
 		this.gridEl = this.bodyEl.createDiv({ cls: "bc-grid" });
-
 		this.registerDomEvent(this.gridEl, "click", (e) => this.onGridClick(e));
+
+		this.sideEl = top.createDiv({ cls: "bc-side bc-hidden" });
+		this.panelScrollEl = root.createDiv({ cls: "bc-panel" });
+		this.inputBarEl = root.createDiv({ cls: "bc-input-bar" });
+		this.panel = new DiaryPanel(this.plugin, this);
+		this.panel.build(this.panelScrollEl, this.inputBarEl);
+
+		this.applyLayout();
+	}
+
+	/** Exact rendered width of the calendar grid — 7 cells plus extras. */
+	private calendarWidth(): number {
+		const s = this.plugin.settings;
+		return (s.showWeekNumber ? WEEKNUM_W : 0) + 7 * s.cellSize;
+	}
+
+	/** Split the pane between the calendar strip and the diary panel. */
+	private applyLayout(): void {
+		if (!this.bodyEl) return;
+		const s = this.plugin.settings;
+		const root = this.contentEl;
+
+		const calWidth = this.calendarWidth();
+		root.style.setProperty("--bc-maxw", `${calWidth}px`);
+		this.bodyEl.style.height = `${s.calendarHeight}px`;
+
+		// The stats move beside the calendar as soon as one tile column fits in
+		// what's actually left: pane minus our own padding, the calendar, and
+		// the column gap — so the side column never overflows the right edge.
+		const leftover = root.clientWidth - PANE_PADDING_H - calWidth - COLUMN_GAP;
+		const wide = s.showStats && leftover >= SIDE_MIN_W;
+		root.toggleClass("bc-wide", wide);
+		this.sideEl.toggleClass("bc-hidden", !wide);
+		const statsEl = this.panel?.statsContainer;
+		if (statsEl) {
+			const target = wide ? this.sideEl : this.panelScrollEl;
+			if (statsEl.parentElement !== target) {
+				if (wide) target.appendChild(statsEl);
+				else target.insertBefore(statsEl, target.firstChild);
+			}
+		}
+
+		const panelVisible = (s.showStats && !wide) || s.showHeatmap || s.showTimeline;
+		this.panelScrollEl.toggleClass("bc-hidden", !panelVisible);
+		this.inputBarEl.toggleClass("bc-hidden", !s.showInput);
+		this.panelScrollEl.toggleClass("bc-panel-show-stats", s.showStats);
+		this.panelScrollEl.toggleClass("bc-panel-show-heatmap", s.showHeatmap);
+		this.panelScrollEl.toggleClass("bc-panel-show-timeline", s.showTimeline);
 	}
 
 	// --- navigation -----------------------------------------------------------
@@ -146,24 +238,23 @@ export class CalendarView extends ItemView {
 	private render(): void {
 		if (!this.bodyEl) return;
 		const settings = this.plugin.settings;
-		this.dailySettings = this.plugin.dailyNoteSettings();
+		this.diaryConfig = getDiaryConfig(this.app, settings);
 		const locale = effectiveLocale(settings.localeOverride);
 		const firstDay = weekStartDay(settings.weekStart, locale);
 
-		const width = this.bodyEl.clientWidth;
-		const height = this.bodyEl.clientHeight;
-		if (width < 1 || height < 1) {
-			// Not laid out yet (e.g. view still hidden). The ResizeObserver will
-			// fire once the view gains a size, so just bail out for now.
-			return;
-		}
+		// The calendar's geometry comes from the settings alone — cells and the
+		// grid never resize with the pane. (A too-narrow pane clips it instead.)
+		const width = this.calendarWidth();
+		const height = settings.calendarHeight;
 
 		const overhead = (settings.showWeekNumber ? WEEKNUM_W : 0) + BLOCK_GAP;
+		// min = max = cellSize: cells are exactly the configured size; the
+		// height only decides how many week rows are shown.
 		const geometry = computeGeometry(
 			width,
 			height - WEEKDAY_ROW_H,
-			CELL_MIN,
-			CELL_MAX,
+			settings.cellSize,
+			settings.cellSize,
 			overhead,
 		);
 		const placement = placeFocus(geometry);
@@ -306,7 +397,7 @@ export class CalendarView extends ItemView {
 		top.createSpan({ cls: "bc-day-num", text: `${date.date()}` });
 
 		const dotsEl = el.createDiv({ cls: "bc-dots" });
-		const file = getDailyNote(this.app, date, this.dailySettings!);
+		const file = getDiaryNote(this.app, this.diaryConfig!, date);
 		if (file) {
 			el.addClass("has-note");
 			// Show the gray presence dot now; decorateDots() adds rule dots async.
@@ -365,18 +456,19 @@ export class CalendarView extends ItemView {
 		void this.openOrCreate(moment(key, "YYYY-MM-DD"), newLeaf);
 	}
 
-	private async openOrCreate(date: moment.Moment, newLeaf: boolean): Promise<void> {
-		const dailySettings = this.plugin.dailyNoteSettings();
+	/** Open the diary note for `date`, creating it (after the optional confirm) if missing. */
+	async openOrCreate(date: moment.Moment, newLeaf: boolean): Promise<void> {
+		const config = getDiaryConfig(this.app, this.plugin.settings);
 		const locale = effectiveLocale(this.plugin.settings.localeOverride);
 
-		let file = getDailyNote(this.app, date, dailySettings);
+		let file = getDiaryNote(this.app, config, date);
 		if (!file) {
-			const path = dailyNotePath(date, dailySettings);
+			const path = diaryPathForDate(config, date);
 			if (this.plugin.settings.confirmBeforeCreate) {
 				const confirmed = await new CreateNoteModal(this.app, date.clone().locale(locale), path).confirm();
 				if (!confirmed) return;
 			}
-			file = await createDailyNote(this.app, date, dailySettings);
+			file = await createDiaryNote(this.app, config, date);
 			if (!file) return;
 			// The vault 'create' event will refresh the calendar and show the dot.
 		}
@@ -406,11 +498,12 @@ export class CalendarView extends ItemView {
 		return parts.join(", ");
 	}
 
-	/** dayKey of the active file if it is a daily note, else null. */
+	/** dayKey of the active file if it is a diary note, else null. */
 	private computeActiveDayKey(): string | null {
 		const file = this.app.workspace.getActiveFile();
 		if (!file) return null;
-		const date = getDateFromFile(file, this.plugin.dailyNoteSettings());
+		const config = this.diaryConfig ?? getDiaryConfig(this.app, this.plugin.settings);
+		const date = diaryDateFromPath(config, file.path);
 		return date ? dayKey(date) : null;
 	}
 

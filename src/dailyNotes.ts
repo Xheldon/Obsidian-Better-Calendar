@@ -1,4 +1,4 @@
-import { App, normalizePath, Notice, TFile, TFolder } from "obsidian";
+import { App } from "obsidian";
 import { moment } from "obsidian";
 
 export interface DailyNoteSettings {
@@ -42,32 +42,7 @@ export function dayKey(date: moment.Moment): string {
 	return date.format("YYYY-MM-DD");
 }
 
-/**
- * The existing daily note for `date`, or null. Looks for a file at the canonical
- * folder + date-format path — the exact location a note would be created at — so
- * detection always agrees with creation.
- */
-export function getDailyNote(app: App, date: moment.Moment, settings: DailyNoteSettings): TFile | null {
-	const file = app.vault.getAbstractFileByPath(dailyNotePath(date, settings));
-	return file instanceof TFile ? file : null;
-}
-
-/** If `file` is a daily note (inside the folder, name parses with the format), its date; else null. */
-export function getDateFromFile(file: TFile, settings: DailyNoteSettings): moment.Moment | null {
-	const folder = settings.folder ? normalizePath(settings.folder).replace(/\/$/, "") : "";
-	if (folder && !file.path.startsWith(folder + "/")) return null;
-	const parsed = moment(file.basename, settings.format, true);
-	return parsed.isValid() ? parsed : null;
-}
-
-/** The vault path a daily note for `date` would live at. */
-export function dailyNotePath(date: moment.Moment, settings: DailyNoteSettings): string {
-	const filename = date.format(settings.format);
-	const folder = settings.folder ? settings.folder.replace(/\/$/, "") + "/" : "";
-	return normalizePath(`${folder}${filename}.md`);
-}
-
-async function ensureFolderExists(app: App, path: string): Promise<void> {
+export async function ensureFolderExists(app: App, path: string): Promise<void> {
 	const parts = path.split("/").slice(0, -1);
 	let current = "";
 	for (const part of parts) {
@@ -91,9 +66,9 @@ async function ensureFolderExists(app: App, path: string): Promise<void> {
 export function applyTemplate(
 	template: string,
 	date: moment.Moment,
-	settings: DailyNoteSettings,
+	title: string,
+	defaultDateFormat: string,
 ): string {
-	const title = date.format(settings.format);
 	const now = moment();
 
 	return template.replace(
@@ -107,49 +82,7 @@ export function applyTemplate(
 				base.add(Number(offsetAmount), offsetUnit as moment.unitOfTime.DurationConstructor);
 			}
 			if (fmt) return base.format(fmt);
-			return base.format(token === "time" ? "HH:mm" : settings.format);
+			return base.format(token === "time" ? "HH:mm" : defaultDateFormat);
 		},
 	);
-}
-
-/** Create (and return) a daily note for `date`, honoring the configured template. */
-export async function createDailyNote(
-	app: App,
-	date: moment.Moment,
-	settings: DailyNoteSettings,
-): Promise<TFile | null> {
-	const path = dailyNotePath(date, settings);
-
-	const existing = app.vault.getAbstractFileByPath(path);
-	if (existing instanceof TFile) return existing;
-
-	await ensureFolderExists(app, path);
-
-	let content = "";
-	if (settings.template) {
-		const templatePath = normalizePath(
-			settings.template.endsWith(".md") ? settings.template : settings.template + ".md",
-		);
-		const templateFile = app.vault.getAbstractFileByPath(templatePath);
-		if (templateFile instanceof TFile) {
-			content = applyTemplate(await app.vault.cachedRead(templateFile), date, settings);
-		} else {
-			new Notice(`Better Calendar: template not found at "${templatePath}".`);
-		}
-	}
-
-	try {
-		return await app.vault.create(path, content);
-	} catch (e) {
-		// Lost a race or the path is otherwise occupied.
-		const after = app.vault.getAbstractFileByPath(path);
-		if (after instanceof TFile) return after;
-		new Notice(`Better Calendar: could not create note at "${path}".`);
-		console.error("Better Calendar: createDailyNote failed", e);
-		return null;
-	}
-}
-
-export function isFolder(value: unknown): value is TFolder {
-	return value instanceof TFolder;
 }

@@ -72,7 +72,8 @@
 /* --- Grid body ------------------------------------------------------------- */
 
 .bc-body {
-	flex: 1 1 auto;
+	/* Fixed strip: height comes from the "Calendar height" setting (inline). */
+	flex: 0 0 auto;
 	min-height: 0;
 	display: flex;
 	align-items: flex-start;
@@ -119,13 +120,12 @@
 	/* Center the number+dots group so tall cells don't read as a digit
 	   floating over dead space. */
 	justify-content: center;
-	gap: 2px;
-	padding: 3px 2px;
+	gap: 1px;
+	padding: 1px;
 	border-radius: 0;
-	/* Scale with the cell on tight layouts, but cap at the theme's UI font size
-	   so day numbers never read larger than editor body text — extra cell space
-	   goes to whitespace, not bigger digits. */
-	font-size: clamp(var(--font-ui-smaller, 11px), calc(var(--bc-cell) * 0.32), var(--font-ui-medium, 15px));
+	/* The calendar is a compact jump list, not a reading surface: numbers stay
+	   small and cap below the UI font size. */
+	font-size: clamp(10px, calc(var(--bc-cell) * 0.3), var(--font-ui-small, 13px));
 	line-height: 1.1;
 	color: var(--text-normal);
 	cursor: pointer;
@@ -232,6 +232,326 @@
 	background-color: var(--interactive-accent-hover);
 }
 
+/* --- Fixed content width & responsive columns -------------------------------- */
+
+/* Top row: calendar column + (in wide panes) the stats column. */
+.bc-top {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: stretch;
+	justify-content: flex-start;
+	/* Keep in sync with COLUMN_GAP in view.ts. */
+	gap: 10px;
+	min-height: 0;
+}
+
+/* The calendar column is fixed-size — it never grows or shrinks with the
+   pane (a too-narrow pane clips it). Everything else (stats, heatmap,
+   timeline, input) is width-adaptive and spans the pane. */
+.bc-cal-col {
+	flex: 0 0 auto;
+	width: var(--bc-maxw, 340px);
+	max-width: 100%;
+	display: flex;
+	flex-direction: column;
+}
+
+/* Stats column beside the calendar; takes all the leftover width, starting
+   from a single tile column and gaining columns as the pane grows. */
+.bc-side {
+	flex: 1 1 auto;
+	/* Keep in sync with SIDE_MIN_W in view.ts. */
+	min-width: 72px;
+	overflow-y: auto;
+	padding-top: 2px;
+}
+
+/* --- Diary panel ------------------------------------------------------------ */
+
+.bc-hidden {
+	display: none !important;
+}
+
+.bc-panel {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow-y: auto;
+	overflow-x: hidden;
+	margin-top: 8px;
+	padding-top: 8px;
+	border-top: 1px solid var(--background-modifier-border);
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.bc-panel:not(.bc-panel-show-stats) .bc-stats,
+.bc-panel:not(.bc-panel-show-heatmap) .bc-heatmap,
+.bc-panel:not(.bc-panel-show-timeline) .bc-timeline {
+	display: none;
+}
+
+.bc-section-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 6px;
+	margin-bottom: 6px;
+}
+
+.bc-section-title {
+	font-size: var(--font-ui-smaller, 11px);
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--text-faint);
+}
+
+/* --- Stats card -------------------------------------------------------------- */
+
+.bc-stats-hero {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+
+.bc-stats-hero-num {
+	font-size: 1.9em;
+	font-weight: 800;
+	line-height: 1;
+	color: var(--text-normal);
+	font-variant-numeric: tabular-nums;
+}
+
+.bc-stats-hero-label {
+	font-size: var(--font-ui-small, 13px);
+	color: var(--text-muted);
+}
+
+/* In the (possibly narrow) side column, the hero stacks and shrinks a bit. */
+.bc-side .bc-stats-hero {
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 2px;
+}
+
+.bc-side .bc-stats-hero-num {
+	font-size: 1.5em;
+}
+
+.bc-stats-grid {
+	display: grid;
+	/* Adapts to wherever the card lives: 1 column in a narrow side column,
+	   3+ in the full-width panel. */
+	/* Small min so a ~140px side column already fits two columns — a lone
+	   column of wide, half-empty tiles reads as wasted space. */
+	grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+	gap: 6px;
+}
+
+.bc-stat {
+	background: var(--background-secondary);
+	border-radius: var(--radius-s);
+	padding: 5px 7px;
+	min-width: 0;
+}
+
+.bc-stat-value {
+	font-weight: 700;
+	font-size: var(--font-ui-medium, 15px);
+	color: var(--text-normal);
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.bc-stat-label {
+	font-size: var(--font-ui-smaller, 11px);
+	color: var(--text-muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* --- Heatmap ----------------------------------------------------------------- */
+
+.bc-hm-nav {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+}
+
+.bc-hm-year {
+	font-size: var(--font-ui-small, 13px);
+	font-weight: 700;
+	color: var(--text-muted);
+	font-variant-numeric: tabular-nums;
+}
+
+.bc-heatmap-grid {
+	display: grid;
+	width: 100%;
+}
+
+.bc-heatmap-month {
+	font-size: 9px;
+	color: var(--text-faint);
+	line-height: 14px;
+	white-space: nowrap;
+	overflow: hidden;
+}
+
+.bc-heatmap-day {
+	border-radius: 2px;
+	/* Mixed from text color so the empty cells stay visible on any theme —
+	   the grid must read as one full-width block, not trail off into blank. */
+	background: color-mix(in srgb, var(--text-muted) 14%, transparent);
+	cursor: pointer;
+}
+
+.bc-heatmap-day.is-future {
+	opacity: 0.55;
+	cursor: default;
+}
+
+.bc-heatmap-day.is-today {
+	outline: 1px solid var(--text-normal);
+	outline-offset: -1px;
+}
+
+.bc-hm-l1 { background: color-mix(in srgb, var(--interactive-accent) 30%, var(--background-primary)); }
+.bc-hm-l2 { background: color-mix(in srgb, var(--interactive-accent) 55%, var(--background-primary)); }
+.bc-hm-l3 { background: color-mix(in srgb, var(--interactive-accent) 78%, var(--background-primary)); }
+.bc-hm-l4 { background: var(--interactive-accent); }
+
+.bc-heatmap-day:hover {
+	outline: 1px solid var(--text-muted);
+	outline-offset: -1px;
+}
+
+/* --- Timeline ---------------------------------------------------------------- */
+
+.bc-tl-date {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: var(--font-ui-smaller, 11px);
+	color: var(--text-muted);
+}
+
+.bc-tl-open {
+	padding: 2px 4px;
+}
+
+.bc-tl-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.bc-tl-empty {
+	font-size: var(--font-ui-small, 13px);
+	color: var(--text-faint);
+	padding: 8px 0;
+}
+
+.bc-tl-section {
+	font-size: var(--font-ui-smaller, 11px);
+	font-weight: 600;
+	color: var(--text-accent);
+	margin-top: 4px;
+}
+
+.bc-tl-entry {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+}
+
+.bc-tl-time {
+	flex: 0 0 auto;
+	font-size: var(--font-ui-smaller, 11px);
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	color: var(--text-muted);
+	background: var(--background-secondary);
+	border-radius: var(--radius-s);
+	padding: 2px 5px;
+	margin-top: 1px;
+}
+
+.bc-tl-body {
+	flex: 1 1 auto;
+	min-width: 0;
+	font-size: var(--font-ui-small, 13px);
+	line-height: 1.5;
+	overflow-wrap: anywhere;
+}
+
+.bc-tl-body > p {
+	margin: 0;
+}
+
+.bc-tl-body > *:first-child {
+	margin-top: 0;
+}
+
+.bc-tl-body > *:last-child {
+	margin-bottom: 0;
+}
+
+/* --- Quick input ------------------------------------------------------------- */
+
+.bc-input-bar {
+	flex: 0 0 auto;
+	margin-top: 8px;
+	padding-top: 8px;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.bc-input-hint {
+	font-size: var(--font-ui-smaller, 11px);
+	color: var(--text-faint);
+	margin-bottom: 4px;
+	font-variant-numeric: tabular-nums;
+}
+
+.bc-input-row {
+	display: flex;
+	align-items: flex-end;
+	gap: 6px;
+}
+
+.bc-input {
+	flex: 1 1 auto;
+	min-width: 0;
+	resize: none;
+	min-height: calc(var(--input-height, 32px));
+	max-height: 140px;
+	font-size: var(--font-ui-small, 13px);
+	line-height: 1.4;
+	padding: 6px 8px;
+}
+
+.bc-send-btn {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: var(--input-height, 32px);
+	width: var(--input-height, 32px);
+	padding: 0;
+	border-radius: var(--radius-s);
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border: none;
+	cursor: pointer;
+}
+
+.bc-send-btn:hover {
+	background: var(--interactive-accent-hover);
+}
+
 /* --- Create-note modal ----------------------------------------------------- */
 
 .better-calendar-modal-path {
@@ -297,6 +617,34 @@
 
 .bc-warning {
 	color: var(--text-error);
+}
+
+.bc-wide-input {
+	width: 320px;
+	max-width: 100%;
+	font-family: var(--font-monospace);
+	font-size: 0.85em;
+}
+
+/* Segment rows carry no name/desc; fill the row like highlight rules do. */
+.bc-segment-row .setting-item-info {
+	display: none;
+}
+
+.bc-segment-row .setting-item-control {
+	flex: 1;
+	justify-content: flex-start;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.bc-segment-row .bc-segment-name {
+	flex: 1 1 140px;
+}
+
+.bc-segment-row .bc-segment-time {
+	width: 110px;
+	font-variant-numeric: tabular-nums;
 }
 
 .bc-daily-info {

@@ -1,4 +1,5 @@
 import { App, Modal } from "obsidian";
+import { t } from "./i18n";
 import { moment } from "obsidian";
 
 /**
@@ -17,11 +18,11 @@ export class CreateNoteModal extends Modal {
 
 	onOpen(): void {
 		const { contentEl, titleEl } = this;
-		titleEl.setText("Create daily note?");
+		titleEl.setText(t("modalTitle"));
 
 		const pretty = this.date.format("dddd, LL");
 		contentEl.createEl("p", {
-			text: `No daily note exists for ${pretty}.`,
+			text: t("modalBody", pretty),
 		});
 		contentEl.createEl("p", {
 			cls: "better-calendar-modal-path",
@@ -29,10 +30,10 @@ export class CreateNoteModal extends Modal {
 		});
 
 		const buttons = contentEl.createDiv({ cls: "modal-button-container" });
-		const cancel = buttons.createEl("button", { text: "Cancel" });
+		const cancel = buttons.createEl("button", { text: t("cancel") });
 		cancel.addEventListener("click", () => this.finish(false));
 
-		const create = buttons.createEl("button", { text: "Create", cls: "mod-cta" });
+		const create = buttons.createEl("button", { text: t("create"), cls: "mod-cta" });
 		create.addEventListener("click", () => this.finish(true));
 		create.focus();
 	}
