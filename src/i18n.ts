@@ -1,3 +1,5 @@
+import { getLanguage } from "obsidian";
+
 /** UI language: "system" follows Obsidian's interface language. */
 export type Language = "system" | "en" | "zh";
 
@@ -317,9 +319,7 @@ let active: Record<TranslationKey, string> = en;
 
 /** Obsidian's own interface language, mapped onto our supported set. */
 function systemLanguage(): "en" | "zh" {
-	// Obsidian stores its UI language here ("zh", "zh-TW", ...; null = English).
-	const lang = window.localStorage.getItem("language") ?? "en";
-	return lang.toLowerCase().startsWith("zh") ? "zh" : "en";
+	return getLanguage().toLowerCase().startsWith("zh") ? "zh" : "en";
 }
 
 export function setLanguage(language: Language): void {

@@ -534,7 +534,7 @@ export class BetterCalendarSettingTab extends PluginSettingTab {
 			text: custom ? t("dailyNotesCustom") : t("dailyNotesCore"),
 		});
 		const folder = s.folder ? s.folder.replace(/\/$/, "") + "/" : "";
-		info.createEl("div", { cls: "bc-daily-path", text: custom || `${folder}${s.format}.md` });
+		info.createDiv({ cls: "bc-daily-path", text: custom || `${folder}${s.format}.md` });
 		if (!custom) {
 			info.createDiv({ text: t("dailyNotesMeta", s.folder || t("vaultRoot"), s.format, s.template || t("none")) });
 		}

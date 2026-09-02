@@ -143,8 +143,8 @@ export class DiaryPanel {
 	}
 
 	private autoGrow(): void {
-		this.textarea.style.height = "auto";
-		this.textarea.style.height = `${Math.min(this.textarea.scrollHeight, 140)}px`;
+		this.textarea.setCssStyles({ height: "auto" });
+		this.textarea.setCssStyles({ height: `${Math.min(this.textarea.scrollHeight, 140)}px` });
 	}
 
 	// --- refresh --------------------------------------------------------------

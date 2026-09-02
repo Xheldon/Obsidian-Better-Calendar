@@ -55,7 +55,6 @@ export function renderHeatmap(container: HTMLElement, opts: HeatmapOptions): voi
 			cls: "bc-heatmap-month",
 			text: first.locale(opts.locale).format(cell >= 9 ? "MMM" : "M"),
 		});
-		label.style.gridRow = "1";
 		label.style.gridColumn = `${col + 1} / span 4`;
 		lastLabelCol = col;
 	}

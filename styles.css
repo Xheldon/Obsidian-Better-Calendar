@@ -268,8 +268,9 @@
 
 /* --- Diary panel ------------------------------------------------------------ */
 
-.bc-hidden {
-	display: none !important;
+/* Doubled class ups specificity past every .bc-* display rule — no !important. */
+.better-calendar .bc-hidden.bc-hidden {
+	display: none;
 }
 
 .bc-panel {
@@ -394,6 +395,7 @@
 }
 
 .bc-heatmap-month {
+	grid-row: 1;
 	font-size: 9px;
 	color: var(--text-faint);
 	line-height: 14px;
